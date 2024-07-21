@@ -1,12 +1,26 @@
-with open("extensions.html", "r") as f:
-    content = f.read()
+import os
+import json
 
-extensions = []
+try:
+    path = os.path.dirname(__file__)
+    
+    with open(f"{path}/extensions.html", "r") as f:
+        content = f.read()
 
-for line in content.split("\n"):
-    if '<span class="ext tag" data-ext="' in line:
-        extension = line.split('data-ext="')[1].split('"')[0]
-        extensions.append(extension)
+    extensions = []
 
-with open("extensions.json", "w") as f:
-    f.write(json.dumps(extensions))
+    for line in content.split("\n"):
+        if '<span class="ext tag" data-ext="' in line:
+            extension = line.split('data-ext="')[1].split('"')[0]
+            extensions.append(extension)
+
+    with open(f"{path}/extensions.json", "w") as f:
+        f.write(json.dumps(extensions))
+
+    print("Extensions have been successfully written to extensions.json")
+
+except FileNotFoundError:
+    print(f"File not found: {file_path}")
+
+except Exception as e:
+    print(f"An error occurred: {e}")
