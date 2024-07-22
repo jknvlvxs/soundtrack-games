@@ -23,10 +23,23 @@ try:
 
     driver = webdriver.Chrome(service=service, options=options)
 
-    # systems = ['pc', 'hoot', '2sf', 'switch', 'psf2', 'psp', 'nsf', 'spc', 'gbs', 'psf', 'vita', 'mobile', '3sf', 'gsf', 'x360', 'kss', 'smd', 'psf3', 'cdi', 'hes', 'wii', 'ssf', 'dsf', 'wiiu', 'xbox', 'gcn', 'psf4', 's98', 'usf', 'fmtowns', 'wsr', '3do', 'ncd', 'psf5']
-    # systems_names = ['PC', 'Hoot', 'DS', 'Switch', 'PS2', 'PSP', 'NES', 'SNES', 'GB', 'PS1', 'Vita', 'Mobile', '3DS', 'GBA', 'Xbox 360', 'Master System', 'Mega Drive', 'PS3', 'Other systems', 'PC Engine', 'Wii', 'Saturn', 'Dreamcast', 'Wii U', 'Xbox', 'GameCube', 'PS4', 'Japanese PC', 'N64', 'FM Towns', 'WonderSwan', '3DO', 'Neo Geo CD', 'PS5']
-
     systems = [
+        "pc",
+        "hoot",
+        "2sf",
+        "switch",
+        "psf2",
+        "psp",
+        "nsf",
+        "spc",
+        "gbs",
+        "psf",
+        "vita",
+        "mobile",
+        "3sf",
+        "gsf",
+        "x360",
+        "kss",
         "smd",
         "psf3",
         "cdi",
@@ -47,6 +60,22 @@ try:
         "psf5",
     ]
     systems_names = [
+        "PC",
+        "Hoot",
+        "DS",
+        "Switch",
+        "PS2",
+        "PSP",
+        "NES",
+        "SNES",
+        "GB",
+        "PS1",
+        "Vita",
+        "Mobile",
+        "3DS",
+        "GBA",
+        "Xbox 360",
+        "Master System",
         "Mega Drive",
         "PS3",
         "Other systems",
