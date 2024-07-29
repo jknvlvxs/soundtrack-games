@@ -1,21 +1,17 @@
-import json
 import os
+import json
 
-try:
-    path = os.path.dirname(__file__)
+path = os.path.dirname(__file__)
 
-    with open(f"{path}/can_convert.json", "r") as f:
-        extensions = json.loads(f.read())
+with open(f"{path}/extensions.json", "r") as json_file:
+    extensions = json.load(json_file)
 
-    extensions = [ext for ext in extensions if extensions[ext]]
+with open(f"{path}/ffmpeg/encoders.ffmpeg.txt", "r") as encoders_file:
+    encoders_content = encoders_file.read()
 
-    with open(f"{path}/convert.json", "w") as f:
-        f.write(json.dumps(extensions))
+filtered_extensions = [ext for ext in extensions if ext in encoders_content]
 
-    print("Extensions have been successfully written to convert.json")
+with open(f"{path}/convert.ffmpeg.json", "w") as output_file:
+    json.dump(filtered_extensions, output_file, indent=4)
 
-except FileNotFoundError:
-    print(f"File not found: {file_path}")
-
-except Exception as e:
-    print(f"An error occurred: {e}")
+print("Filtered extensions have been saved to convert.ffmpeg.json")
