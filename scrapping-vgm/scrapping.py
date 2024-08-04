@@ -9,6 +9,12 @@ import os
 driver = None
 path = os.path.dirname(__file__)
 
+
+def getJsonFromFile(file_path):
+    with open(f"{path}/{file_path}", "r") as file:
+        return json.load(file)
+
+
 try:
     # Inicialize o serviço do ChromeDriver
     service = Service(f"{path}/chromedriver")
@@ -23,108 +29,11 @@ try:
 
     driver = webdriver.Chrome(service=service, options=options)
 
-    systems = [
-        "pc",
-        "hoot",
-        "2sf",
-        "switch",
-        "psf2",
-        "psp",
-        "nsf",
-        "spc",
-        "gbs",
-        "psf",
-        "vita",
-        "mobile",
-        "3sf",
-        "gsf",
-        "x360",
-        "kss",
-        "smd",
-        "psf3",
-        "cdi",
-        "hes",
-        "wii",
-        "ssf",
-        "dsf",
-        "wiiu",
-        "xbox",
-        "gcn",
-        "psf4",
-        "s98",
-        "usf",
-        "fmtowns",
-        "wsr",
-        "3do",
-        "ncd",
-        "psf5",
-    ]
-    systems_names = [
-        "PC",
-        "Hoot",
-        "DS",
-        "Switch",
-        "PS2",
-        "PSP",
-        "NES",
-        "SNES",
-        "GB",
-        "PS1",
-        "Vita",
-        "Mobile",
-        "3DS",
-        "GBA",
-        "Xbox 360",
-        "Master System",
-        "Mega Drive",
-        "PS3",
-        "Other systems",
-        "PC Engine",
-        "Wii",
-        "Saturn",
-        "Dreamcast",
-        "Wii U",
-        "Xbox",
-        "GameCube",
-        "PS4",
-        "Japanese PC",
-        "N64",
-        "FM Towns",
-        "WonderSwan",
-        "3DO",
-        "Neo Geo CD",
-        "PS5",
-    ]
-
-    extensions = [
-        "ogg",
-        "mp3",
-        "adx",
-        "wav",
-        "ape",
-        "m4a",
-        "xa",
-        "flac",
-        "wma",
-        "tak",
-        "aac",
-        "awb",
-        "mp2",
-        "asf",
-        "mp4",
-        "caf",
-        "aiff",
-        "aifc",
-        "aif",
-        "opus",
-        "ac3",
-        "mpc",
-        "wave",
-        "au",
-        "lmp3",
-    ]
-
+    systems = getJsonFromFile("systems/systems.json")
+    systems_names = getJsonFromFile("systems/names.json")
     systems_names_relation = dict(zip(systems, systems_names))
+
+    extensions = getJsonFromFile("extensions/convert.ffmpeg.json")
 
     for system in systems_names_relation:
         # Create a directory for system in 'data/{system}'
