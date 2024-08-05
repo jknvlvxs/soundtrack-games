@@ -3,6 +3,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+import json
 import time
 import os
 
@@ -31,6 +33,11 @@ try:
 
     systems = getJsonFromFile("systems/systems.json")
     systems_names = getJsonFromFile("systems/names.json")
+
+    # FIXME: Remove first 8 already scrapped systems
+    systems = systems[8:]
+    systems_names = systems_names[8:]
+
     systems_names_relation = dict(zip(systems, systems_names))
 
     extensions = getJsonFromFile("extensions/convert.ffmpeg.json")
