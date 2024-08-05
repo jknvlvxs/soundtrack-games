@@ -35,8 +35,8 @@ try:
     systems_names = getJsonFromFile("systems/names.json")
 
     # FIXME: Remove first 8 already scrapped systems
-    systems = systems[8:]
-    systems_names = systems_names[8:]
+    systems = systems[16:]
+    systems_names = systems_names[16:]
 
     systems_names_relation = dict(zip(systems, systems_names))
 
@@ -49,37 +49,27 @@ try:
 
         for extension in extensions:
             os.makedirs(f"{path}/data/{system_name}", exist_ok=True)
-            print(
-                f"Coletando dados do console {system_name} ({system_code}) com extensão {extension}"
-            )
+            print(f"Coletando dados do console {system_name} ({system_code}) com extensão {extension}")
 
             page = 1
 
             while page != "":
                 # Get the first page of the system
-                driver.get(
-                    f"https://vgm.hcs64.com?site={system_code}&page={page}&exts={extension}"
-                )
+                driver.get(f"https://vgm.hcs64.com?site={system_code}&page={page}&exts={extension}")
 
                 # Wait for the page to load
                 time.sleep(5)
-                wait = WebDriverWait(driver, 10)
+                wait = WebDriverWait(driver, 5)
 
                 # Busca o next page no <a> com class="page-next" e data-page=""
-                next_page = wait.until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "a.page-next"))
-                )
+                next_page = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "a.page-next")))
                 data_page = next_page.get_attribute("data-page")
 
-                if data_page == page:
-                    break
+                if data_page == page: break
 
                 print(f"→ Página {page}")
 
-                with open(
-                    f"{path}/data/{system_name}/{system_code}_{extension}_{page}.html",
-                    "w",
-                ) as f:
+                with open(f"{path}/data/{system_name}/{system_code}_{extension}_{page}.html", "w") as f:
                     f.write(driver.page_source)
 
                 page = data_page
