@@ -13,7 +13,7 @@ for root, dirs, files in os.walk(base_dir):
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            if ".7z" not in content or ".zip" not in content:
+            if ".7z" not in content and ".zip" not in content:
                 os.remove(file_path)
                 print(f"Deleted: {file_path}")
 
