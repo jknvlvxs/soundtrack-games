@@ -35,8 +35,8 @@ try:
     systems_names = getJsonFromFile("systems/names.json")
 
     # FIXME: Remove first 8 already scrapped systems
-    systems = systems[16:]
-    systems_names = systems_names[16:]
+    systems = systems[23:]
+    systems_names = systems_names[23:]
 
     systems_names_relation = dict(zip(systems, systems_names))
 
