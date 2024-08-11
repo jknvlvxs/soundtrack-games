@@ -1,0 +1,47 @@
+# Scraping VGM Data
+
+## Getting Extensions to Download Using ffmpeg
+
+In the `1. Scraping VGM Data/extensions/` directory, you will find `extensions.json`, which is collected from `extensions.html`. This file contains all extensions gathered from the VGM website.
+
+To extract data from the `.html` file and create `extensions.json`, run:
+> python extensions.py
+
+Next, you need to check which of these extensions can be converted to `.mp3` using **ffmpeg**. In the `/ffmpeg` directory, there are 3 `.txt` files with the output of **ffmpeg** commands that list supported extensions.
+
+To verify if each format in `extensions.json` is supported by **ffmpeg**, run:
+> python convert.py
+
+This will generate the `convert.json` file, which will be used later in the data scraping process.
+
+## Running the Scraping Script on the VGM Site
+
+To collect data, you need to search for game consoles/systems on the VGM website. We have collected this data manually, and you can find it in `1. Scraping VGM Data/systems/`.
+
+Now, run the script to collect all data. This process will take some time, so please be patient:
+> python scraping.py
+
+This script will search every page for all systems listed in `systems.json` and all extensions in `convert.json`, then download the `.html` files. The data will be saved in `1. Scraping VGM Data/data/`.
+
+## Cleaning Up HTML Files Without Soundtrack Links
+
+In the `2. Generating data/` directory, you need to clean up `.html` files that do not contain soundtrack links by running:
+> python cleaning.py
+
+## Generating `data.json`
+
+To organize the data, run a script to create a `.json` file that merges all collected links and games. Run:
+> python generate.py
+
+This will generate the `data.json` file, which includes information such as:
+- Name
+- Date
+- Systems
+- Size
+- URL
+- YouTube URL
+
+## Viewing Collected Data Metrics
+
+To view the amount of raw data collected, run:
+> python metrics.py

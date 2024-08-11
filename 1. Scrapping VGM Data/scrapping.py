@@ -36,7 +36,7 @@ try:
 
     systems_names_relation = dict(zip(systems, systems_names))
 
-    extensions = getJsonFromFile("extensions/convert.ffmpeg.json")
+    extensions = getJsonFromFile("extensions/convert.json")
 
     for system in systems_names_relation:
         # Create a directory for system in 'data/{system}'
