@@ -25,12 +25,14 @@ This script will search every page for all systems listed in `systems.json` and 
 
 ## Cleaning Up HTML Files Without Soundtrack Links
 
-In the `2. Generating data/` directory, you need to clean up `.html` files that do not contain soundtrack links by running:
+Now, we need to clean up `.html` files that do not contain soundtrack links by running:
 > python cleaning.py
 
 ## Generating `data.json`
 
-To organize the data, run a script to create a `.json` file that merges all collected links and games. Run:
+In the `2. Generating data/` directory, we will run script that organizes the collected data into a file.
+
+To organize the data, there's a script to create a `.json` file that merges all collected links and games. Run:
 > python generate.py
 
 This will generate the `data.json` file, which includes information such as:
@@ -39,7 +41,9 @@ This will generate the `data.json` file, which includes information such as:
 - Systems
 - Size
 - URL
-- YouTube URL
+- YouTube  
+  - URL
+  - Channel
 
 ## Viewing Collected Data Metrics
 
