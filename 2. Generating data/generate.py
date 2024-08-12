@@ -61,16 +61,17 @@ for root, dirs, files in os.walk(base_dir):
                         "name": game_name,
                         "size": convert_size_to_mb(file_size),
                         "date": span_tag.find("small", class_="date").text.strip(),
-                        "system": span_tag.find("span", class_="sitetag").get("data-site"),
+                        "system": span_tag.find("span", class_="sitetag").get(
+                            "data-site"
+                        ),
                     }
 
-                    video_url, video_channel = search_youtube(f"{obj.name} {obj.system} full gameplay")
+                    # video_url, video_channel = search_youtube(
+                    #     f"{obj['name']} {obj['system']} full gameplay"
+                    # )
 
-                    if(video_url is not None):
-                        obj["youtube"] = {
-                            "url": video_url,
-                            "channel": video_channel
-                        }
+                    # # if(video_url is not None):
+                    # obj["youtube"] = {"url": video_url, "channel": video_channel}
 
                     data_list.append(obj)
 
