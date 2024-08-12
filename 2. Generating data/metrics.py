@@ -3,7 +3,8 @@ import os
 
 path = os.path.dirname(__file__)
 base_dir = os.path.join(path, "")
-systems_dir = os.path.join(path, "systems")
+systems_dir = os.path.join(f"{path}/../1. Scrapping VGM Data", "systems")
+print(systems_dir)
 systems_file = os.path.join(systems_dir, "systems.json")
 names_file = os.path.join(systems_dir, "names.json")
 
