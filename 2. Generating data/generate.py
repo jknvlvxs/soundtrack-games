@@ -1,12 +1,44 @@
 import os
 import json
+import re
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from youtubesearchpython import VideosSearch
 
 path = os.path.dirname(__file__)
-base_dir = os.path.join(f"{path}/../1. Scrapping VGM Data", "data")
+
+data_dir = os.path.join(f"{path}/../1. Scrapping VGM Data", "data")
 output_file = os.path.join(path, "data.json")
+
+systems_dir = os.path.join(f"{path}/../1. Scrapping VGM Data", "systems")
+systems_file = os.path.join(systems_dir, "systems.json")
+names_file = os.path.join(systems_dir, "names.json")
+
+
+def create_system_data():
+    with open(systems_file, "r", encoding="utf-8") as f:
+        system_codes = json.load(f)
+
+    with open(names_file, "r", encoding="utf-8") as f:
+        system_names = json.load(f)
+
+    systems = {}
+    for index, code in enumerate(system_codes):
+        systems[code] = system_names[index]
+
+    return systems
+
+
+def find_date(text):
+    pattern = r"\b\d{4}-\d{2}-\d{2}\b"
+
+    match = re.search(pattern, text)
+
+    if match:
+        return match.group(0)
+    else:
+        return None
+
 
 def convert_size_to_mb(size_str):
     if "MB" in size_str:
@@ -20,20 +52,33 @@ def convert_size_to_mb(size_str):
     return int(size_value)
 
 
-def search_youtube(query):
-    videosSearch = VideosSearch(query, limit=3)
-    results = videosSearch.result()
-    if "result" in results and len(results["result"]) > 0:
-        first_video = results["result"][0]
-        video_url = first_video["link"]
-        video_channel = first_video["channel"]["name"]
-        return video_url, video_channel
-    return None, None
+def convert_system_to_name(system_code):
+    return Null
+
+
+# def search_youtube(query):
+#     videosSearch = VideosSearch(query, limit=3)
+#     results = videosSearch.result()
+#     if "result" in results and len(results["result"]) > 0:
+#         first_video = results["result"][0]
+#         video_url = first_video["link"]
+#         video_channel = first_video["channel"]["name"]
+#         return video_url, video_channel
+#     return None, None
+
+
+def dict_to_tuple(d):
+    return tuple(sorted(d.items()))
+
+
+def tuple_to_dict(t):
+    return dict(t)
 
 
 data_list = []
+systems = create_system_data()
 
-for root, dirs, files in os.walk(base_dir):
+for root, dirs, files in os.walk(data_dir):
     for file in files:
         if file.endswith(".html"):
             file_path = os.path.join(root, file)
@@ -52,18 +97,21 @@ for root, dirs, files in os.walk(base_dir):
                 if a_tag and span_tag:
                     game_url = a_tag["href"]
                     file_size = span_tag.find("small", class_="info").text.strip()
-                    game_name = a_tag.text.strip()
+                    name_tag = a_tag.text.strip()
+                    system_code = span_tag.find("span", class_="sitetag").get(
+                        "data-site"
+                    )
+                    date = find_date(name_tag)
 
-                    if(game_url == ""): continue
+                    if game_url == "" or date is None:
+                        continue
 
                     obj = {
                         "url": game_url.replace(" ", "%20"),
-                        "name": game_name,
+                        "name": name_tag,
                         "size": convert_size_to_mb(file_size),
-                        "date": span_tag.find("small", class_="date").text.strip(),
-                        "system": span_tag.find("span", class_="sitetag").get(
-                            "data-site"
-                        ),
+                        "date": date,
+                        "system": systems.get(system_code, system_code),
                     }
 
                     # video_url, video_channel = search_youtube(
@@ -75,8 +123,10 @@ for root, dirs, files in os.walk(base_dir):
 
                     data_list.append(obj)
 
+object_set = set(dict_to_tuple(obj) for obj in data_list)
+unique_objects = [tuple_to_dict(t) for t in object_set]
 
 with open(output_file, "w", encoding="utf-8") as f:
-    json.dump(data_list, f, indent=4, ensure_ascii=False)
+    json.dump(unique_objects, f, indent=4, ensure_ascii=False)
 
 print("Completed the generating data process.")
