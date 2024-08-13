@@ -7,7 +7,7 @@ path = os.path.dirname(__file__)
 base_dir = os.path.join(path, "")
 data_file = os.path.join(base_dir, "data.json")
 
-chunk_size = 50
+chunk_size = 80
 
 
 def search_youtube(name, system, query=""):
@@ -34,7 +34,7 @@ def extract_name(name):
     # Remove content inside square brackets and parentheses
     cleaned_name = re.sub(r"\[.*?\]|\(.*?\)", "", name)
     # Strip any leading or trailing whitespace
-    cleaned_name = cleaned_name.strip()
+    cleaned_name = cleaned_name.strip().replace(".7z", "").replace(".zip", "").replace("-", "").replace(".", "")
     return cleaned_name
 
 

@@ -48,16 +48,24 @@ python generate.py
 This will generate the `data.json` file, which includes information such as:
 - Name
 - Date
-- Systems
+- System
 - Size
 - URL
 - YouTube  
   - URL
+  - Title
   - Channel
+  - Duration
 
 ## Viewing Collected Data Metrics
 
 To view the amount of raw data collected, run:
 ```
 python metrics.py
+```
+
+## Collecting Youtube Videos
+
+```
+python collect_youtube.py | tee -a youtube.txt
 ```
