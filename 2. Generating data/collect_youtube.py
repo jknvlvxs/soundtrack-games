@@ -1,16 +1,17 @@
 import json
 import os
 from youtubesearchpython import VideosSearch
+import re
 
 path = os.path.dirname(__file__)
 base_dir = os.path.join(path, "")
 data_file = os.path.join(base_dir, "data.json")
 
-chunk_size = 100
+chunk_size = 50
 
 
-def search_youtube(query):
-    videosSearch = VideosSearch(query, limit=3)
+def search_youtube(name, system, query=""):
+    videosSearch = VideosSearch(f"{name} {system} {query}", limit=3)
     results = videosSearch.result()
     if "result" in results and len(results["result"]) > 0:
         first_video = results["result"][0]
@@ -20,7 +21,21 @@ def search_youtube(query):
         duration = first_video["duration"]
 
         return video_url, video_channel, video_title, duration
-    return None, None
+
+    if query == "Full Gameplay":
+        return search_youtube(name, system, "Walkthrough")
+    if query == "Walkthrough":
+        return search_youtube(name, system, "")
+    if query == "":
+        return None, None, None, None
+
+
+def extract_name(name):
+    # Remove content inside square brackets and parentheses
+    cleaned_name = re.sub(r"\[.*?\]|\(.*?\)", "", name)
+    # Strip any leading or trailing whitespace
+    cleaned_name = cleaned_name.strip()
+    return cleaned_name
 
 
 def main():
@@ -31,11 +46,15 @@ def main():
         for i in range(0, len(data_list), chunk_size):
             chunk = data_list[i : i + chunk_size]
             for obj in chunk:
-                name = obj["name"].strip().split(" (")[0]
+                if "youtube" in obj:
+                    continue
+
+                name = extract_name(obj["name"].strip())
                 system = obj["system"].strip()
 
-                query = f"{name} {system} Full Gameplay"
-                video_url, video_channel, video_title, duration = search_youtube(query)
+                video_url, video_channel, video_title, duration = search_youtube(
+                    name, system, "Full Gameplay"
+                )
 
                 if video_url is not None:
                     obj["youtube"] = {
@@ -45,7 +64,7 @@ def main():
                         "duration": duration,
                     }
                 else:
-                    print(f"No video found for {query}")
+                    print(f"No video found for {name} {system}")
 
             with open(data_file, "w", encoding="utf-8") as f:
                 json.dump(data_list, f, indent=4)
