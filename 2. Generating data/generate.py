@@ -56,17 +56,6 @@ def convert_system_to_name(system_code):
     return Null
 
 
-# def search_youtube(query):
-#     videosSearch = VideosSearch(query, limit=3)
-#     results = videosSearch.result()
-#     if "result" in results and len(results["result"]) > 0:
-#         first_video = results["result"][0]
-#         video_url = first_video["link"]
-#         video_channel = first_video["channel"]["name"]
-#         return video_url, video_channel
-#     return None, None
-
-
 def dict_to_tuple(d):
     return tuple(sorted(d.items()))
 
@@ -113,13 +102,6 @@ for root, dirs, files in os.walk(data_dir):
                         "date": date,
                         "system": systems.get(system_code, system_code),
                     }
-
-                    # video_url, video_channel = search_youtube(
-                    #     f"{obj['name']} {obj['system']} full gameplay"
-                    # )
-
-                    # # if(video_url is not None):
-                    # obj["youtube"] = {"url": video_url, "channel": video_channel}
 
                     data_list.append(obj)
 
