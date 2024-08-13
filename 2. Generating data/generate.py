@@ -126,6 +126,9 @@ for root, dirs, files in os.walk(data_dir):
 object_set = set(dict_to_tuple(obj) for obj in data_list)
 unique_objects = [tuple_to_dict(t) for t in object_set]
 
+# order unique_objects by name
+unique_objects = sorted(unique_objects, key=lambda item: item["name"])
+
 with open(output_file, "w", encoding="utf-8") as f:
     json.dump(unique_objects, f, indent=4, ensure_ascii=False)
 
