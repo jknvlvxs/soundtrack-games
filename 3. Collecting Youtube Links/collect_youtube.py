@@ -49,7 +49,7 @@ def main():
         for i in range(0, len(data_list), chunk_size):
             chunk = data_list[i : i + chunk_size]
             for index, obj in enumerate(chunk):
-                print(f"Searching for nº {i + index + 1} of {len(data_list)} ({int((i + index + 1)/len(data_list))}%)")
+                print(f"Searching for nº {i + index + 1} of {len(data_list)} ({int((i + index + 1) * 100/len(data_list))}%)")
                 if "youtube" in obj: continue
 
                 name = extract_name(obj["name"].strip())
