@@ -1,4 +1,5 @@
-# Scraping VGM Data
+# VMDB - Video-Music Database
+VMDB (Video-Music Database) is a repository aimed at demonstrating the steps to create a dataset containing a list of n pairs (a, v) for a specific game. In this dataset, a represents an audio track from the game’s soundtrack, and v is a gameplay video of the game where the specific audio track plays. 
 
 ## Getting Extensions to Download Using ffmpeg
 
