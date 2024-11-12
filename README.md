@@ -66,7 +66,17 @@ python metrics.py
 ```
 
 ## Collecting Youtube Videos
+Copy the data file to the step 3, to collect youtube links
+```
+cp 2.\ Generating\ data/data.json 3.\ Collecting\ Youtube\ Links/
+```
 
+Now, the code is ready to collect youtube links
 ```
 python collect_youtube.py | tee -a youtube.txt
+```
+
+## Downloading Content
+```
+python download_content.py
 ```
