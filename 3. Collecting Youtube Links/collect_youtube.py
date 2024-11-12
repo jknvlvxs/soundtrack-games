@@ -56,6 +56,9 @@ def main():
                     f"Searching for nº {i + index + 1} of {len(data_list)} ({int((i + index + 1) * 100/len(data_list))}%)"
                 )
 
+                if "youtube" in obj:
+                    continue
+
                 name = extract_name(obj["name"].strip())
                 system = obj["system"].strip()
                 query = "Longplay"
@@ -78,9 +81,9 @@ def main():
                     with open(os.path.join(path, "not_found.log"), "a") as f:
                         f.write(f"No video found for {name} {system}\n")
 
-        # Save updated data_list back to the same file
-        with open(data_file, "w", encoding="utf-8") as f:
-            json.dump(data_list, f, indent=4)
+            # Save updated data_list back to the same file
+            with open(data_file, "w", encoding="utf-8") as f:
+                json.dump(data_list, f, indent=4)
 
     except FileNotFoundError as e:
         print(f"File not found: {e}")
