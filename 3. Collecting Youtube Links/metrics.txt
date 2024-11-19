@@ -1,31 +1,32 @@
-Total objects (.zip URL): 5114
-
-Total size (MB): 1013920
+Total objects (.zip URL): 18600
+Total size (MB): 3225312
 
 Objects per system/console:
-  PC: 2178
-  PS1: 531
-  PS2: 362
-  Switch: 347
-  Saturn: 223
-  PC Engine: 214
-  PS3: 156
-  Xbox 360: 154
-  Wii: 152
-  Vita: 113
-  Dreamcast: 86
-  Xbox: 84
-  Mobile: 81
-  PS4: 78
-  Mega Drive: 65
-  Wii U: 56
-  PSP: 49
-  GameCube: 39
-  3DS: 35
-  Neo Geo CD: 34
-  DS: 28
-  Other systems: 18
-  GBA: 15
-  3DO: 13
-  SNES: 2
-  PS5: 1
+  PC: 6012
+  Switch: 2390
+  PS2: 1427
+  PS1: 1047
+  Mobile: 1024
+  Vita: 845
+  PSP: 555
+  PS3: 537
+  Wii: 534
+  Xbox 360: 522
+  Saturn: 499
+  Dreamcast: 464
+  Wii U: 436
+  PC Engine: 410
+  3DS: 332
+  GameCube: 327
+  Xbox: 311
+  PS4: 310
+  DS: 258
+  Mega Drive: 108
+  Neo Geo CD: 96
+  3DO: 60
+  GBA: 38
+  Other systems: 37
+  SNES: 10
+  FM Towns: 6
+  PS5: 4
+  N64: 1
