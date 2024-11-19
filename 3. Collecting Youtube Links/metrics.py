@@ -21,6 +21,10 @@ def calculate_metrics(file_path):
     total_size_mb = 0
 
     for obj in data_list:
+        if obj.get("youtube") == None:
+            total_objects -= 1
+            continue
+
         system = obj.get("system")
         if system:
             if system in system_counts:
@@ -30,7 +34,7 @@ def calculate_metrics(file_path):
 
         total_size_mb += obj.get("size", 0)
 
-    print(f"Total objects (.zip URL): {total_objects}\n")
+    print(f"Total objects (.zip URL): {total_objects}")
     print(f"Total size (MB): {total_size_mb}\n")
 
 
@@ -47,6 +51,9 @@ def print_system_names(data_file):
 
     system_counts = {}
     for obj in data_list:
+        if obj.get("youtube") == None:
+            continue
+
         system = obj.get("system")
         if system in system_counts:
             system_counts[system] += 1
@@ -63,7 +70,7 @@ def print_system_names(data_file):
         print(f"  {system_name}: {count}")
 
 
-data_file = os.path.join(base_dir, "links.json")
+data_file = os.path.join(base_dir, "metadata.json")
 
 calculate_metrics(data_file)
 print_system_names(data_file)
