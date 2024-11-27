@@ -2,7 +2,7 @@ import json
 import os
 
 path = os.path.dirname(__file__)
-base_dir = os.path.join(path, "")
+base_dir = os.path.join(path, "..")
 
 
 def calculate_metrics(file_path):
