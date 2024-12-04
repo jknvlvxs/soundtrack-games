@@ -64,9 +64,6 @@ def main():
                 video_url, video_channel, video_title, duration = search_youtube(name, system, query)
 
                 if video_url is not None:
-                    obj["slug"] = obj["name"]
-                    obj["name"] = name.strip()
-
                     obj["youtube"] = {
                         "url": video_url,
                         "channel": video_channel,
