@@ -1,108 +1,113 @@
 import os
 import json
 import re
+
+from datetime import datetime
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from youtubesearchpython import VideosSearch
 
-path = os.path.dirname(__file__)
-
-data_dir = os.path.join(f"{path}/../1. Scrapping VGM Data/zophar", "data")
-output_file = os.path.join(path, "data.json")
-
-
-def create_system_data():
-    with open(systems_file, "r", encoding="utf-8") as f:
-        system_codes = json.load(f)
-
-    with open(names_file, "r", encoding="utf-8") as f:
-        system_names = json.load(f)
-
-    systems = {}
-    for index, code in enumerate(system_codes):
-        systems[code] = system_names[index]
-
-    return systems
-
-
-def find_date(text):
-    pattern = r"\b\d{4}-\d{2}-\d{2}\b"
-
-    match = re.search(pattern, text)
-
-    if match:
-        return match.group(0)
-    else:
+def format_release_date(release_date_tag):
+    release_date_raw = release_date_tag.find("span", class_="infodata").text.strip() if release_date_tag else None
+    
+    if not release_date_raw:
         return None
 
+    date_string = re.sub(r'(\d+)(st|nd|rd|th)', r'\1', release_date_raw)
 
-def convert_size_to_mb(size_str):
-    if "MB" in size_str:
-        size_value = float(size_str.replace("MB", "").strip())
-    elif "GB" in size_str:
-        size_value = float(size_str.replace("GB", "").strip()) * 1024
-    elif "KB" in size_str:
-        size_value = float(size_str.replace("KB", "").strip()) / 1024
-    else:
-        size_value = 0
-    return int(size_value)
+    try:
+        return datetime.strptime(date_string, "%b %d, %Y").strftime("%d/%m/%Y")
+    except ValueError:
+        try:
+            return datetime.strptime(f"1 {date_string}", "%d %b %Y").strftime("%d/%m/%Y")
+        except ValueError:
+            return None
 
+path = os.path.dirname(__file__)
 
-def convert_system_to_name(system_code):
-    return Null
-
-
-def dict_to_tuple(d):
-    return tuple(sorted(d.items()))
-
-
-def tuple_to_dict(t):
-    return dict(t)
-
+data_dir = os.path.join(f"{path}/../../1. Scrapping VGM Data/zophar", "data")
+output_file = os.path.join(path, "data.json")
 
 data_list = []
-systems = create_system_data()
+debug = ""
 
 for root, dirs, files in os.walk(data_dir):
     for file in files:
-        if file.endswith(".html"):
+        if file.endswith(f"{debug}.html"):
             file_path = os.path.join(root, file)
+            
+            game_slug = file_path.split("/")[-1].replace(".html", "")
+            system_slug = file_path.split("/")[-2]
 
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
+            
+            try:
+                soup = BeautifulSoup(content, "lxml")
 
-            soup = BeautifulSoup(content, "lxml")
+                # Extracting required data
+                name = soup.find("div", id="music_info").find("h2").text.strip()
+                # print(f"{name} | {file_path.split('/')[-1]}")
 
-            divs = soup.find_all("div", class_="url")
+                # Extract cover URL if it exists
+                cover_div = soup.find("div", id="music_cover")
+                cover_img = cover_div.find("img") if cover_div else None
+                cover = cover_img["src"] if cover_img else None
 
-            for div in divs:
-                a_tag = div.find("a")
-                span_tag = div.find("span", class_="set-line")
+                # Extract console, emulator, and developer information
+                info_tags = soup.find("div", id="music_info").find_all("p")
+                console = None
+                emulator = None
+                developer = None
 
-                if a_tag and span_tag:
-                    game_url = a_tag["href"]
-                    file_size = span_tag.find("small", class_="info").text.strip()
-                    name_tag = a_tag.text.strip()
-                    system_code = span_tag.find("span", class_="sitetag").get(
-                        "data-site"
-                    )
-                    date = find_date(name_tag)
+                for tag in info_tags:
+                    info_name = tag.find("span", class_="infoname").text.strip()
+                    info_data = tag.find("span", class_="infodata").text.strip()
+                    if "Console" in info_name:
+                        if "(" in info_data:
+                            console, emulator = info_data.split(" (")
+                            emulator = emulator.strip(")")
+                        else:
+                            console = info_data
+                            emulator = None  # No emulator available
+                    if "Developer" in info_name:
+                        developer = info_data
 
-                    if game_url == "" or date is None:
-                        continue
+                release_date_tag = next((tag for tag in info_tags if "Release date" in tag.find("span", class_="infoname").text.strip()), None)
+                release_date = format_release_date(release_date_tag)
 
-                    obj = {
-                        "url": game_url.replace(" ", "%20"),
-                        "name": name_tag,
-                        "size": convert_size_to_mb(file_size),
-                        "date": date,
-                        "system": systems.get(system_code, system_code),
-                    }
+                mass_download = soup.find("div", id="mass_download").find("a")
+                
+                if not mass_download:
+                    continue
+                
+                url = mass_download["href"]
+                size_text = soup.find("div", id="mass_download").find("p").text.split("(")[-1].split(" ")[0]
+                size = int(size_text) if size_text.isdigit() else 0
 
-                    data_list.append(obj)
+                # Form the final object
+                obj = {
+                    "slug": game_slug,
+                    "name": name,
+                    "console": console,
+                    "system": system_slug,
+                    "developer": developer,
+                    "cover": cover,
+                    "emulator": emulator,
+                    "release_date": release_date,
+                    "size": size,
+                    "url": url,
+                }
+                
+                # print(f"{obj}\n")
+                data_list.append(obj)
+            except Exception as e:
+                print(f"Erro ao coletar arquivo: {file_path}")
+                print(f"Erro: {e}\n")
+                exit()
 
-object_set = set(dict_to_tuple(obj) for obj in data_list)
-unique_objects = [tuple_to_dict(t) for t in object_set]
+object_set = set(tuple(sorted(obj.items())) for obj in data_list)
+unique_objects = [dict(t) for t in object_set]
 
 # order unique_objects by name
 unique_objects = sorted(unique_objects, key=lambda item: item["name"])
