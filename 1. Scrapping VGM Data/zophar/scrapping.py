@@ -61,6 +61,5 @@ try:
 
 
 finally:
-    # Feche o navegador
     if driver:
         driver.quit()
