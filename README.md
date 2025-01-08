@@ -78,5 +78,8 @@ python collect_youtube.py | tee -a youtube.txt
 
 ## Downloading Content
 ```
-python download_content.py
+python download_content.py console_slug
 ```
+
+The list of consoles slugs are:
+- `nintendo-snes-spc`
