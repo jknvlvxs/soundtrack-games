@@ -83,3 +83,12 @@ python download_content.py console_slug
 
 The list of consoles slugs are:
 - `nintendo-snes-spc`
+
+## Audio Fingerprinting
+
+### Create mysql database for dejavu using docker
+6. Audio fingerprinting
+  
+```
+docker-compose up
+```
