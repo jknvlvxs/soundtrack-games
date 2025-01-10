@@ -57,6 +57,12 @@ def extract_archive(file_path, extract_to):
     elif file_path.endswith(".7z"):
         with py7zr.SevenZipFile(file_path, "r") as archive:
             archive.extractall(extract_to)
+    
+    # Renomear todos os arquivos extraídos para "soundtrack_00X"
+    for i, file in enumerate(os.listdir(extract_to)):
+        file_extension = os.path.splitext(file)[1]
+        new_file_name = f"soundtrack_%03d{i+1}{file_extension}"
+        os.rename(os.path.join(extract_to, file), os.path.join(extract_to, new_file_name))
     print(f"→ Extração concluída em: {extract_to}")
 
 
