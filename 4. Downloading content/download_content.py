@@ -125,14 +125,14 @@ with open(data_file, "r", encoding="utf-8") as f:
     data = json.load(f)
 
 # Filtrar data para teste
-# filter_games = ["top-anglers-super-fishing-big-fight-2, "top-gear", "toy-story-1996"]
+# filter_games = ["top-anglers-super-fishing-big-fight-2", "top-management-ii", "touge-densetsu-saisoku-battle"]
 # data = [item for item in data if item["slug"] in filter_games]
 
 # Filtrar data por console via argumento
 data = [item for item in data if item["system"] == sys.argv[1] and "youtube" in item]
 
-# Processar cada item no JSON
-for item in data:
+
+def process_item(item):
     # Extrair o nome do jogo para criar a pasta
     console_name = item["system"]
     game_name = item["slug"]
@@ -144,7 +144,7 @@ for item in data:
     videos_folder = os.path.join(game_folder, "videos")
     create_folder(soundtracks_folder)
     create_folder(videos_folder)
-    
+
     def process_soundtracks(soundtracks_folder, soundtrack_url, game_name):
         # Baixar e extrair o arquivo de som
         if not os.listdir(soundtracks_folder):
@@ -160,7 +160,12 @@ for item in data:
             # Cortar vídeo em frames de 10 segundos
             video_path = os.path.join(videos_folder, os.listdir(videos_folder)[0])
             slice_video_into_frames(video_path, game_name)
-            
+
     with ThreadPoolExecutor() as executor:
         executor.submit(process_soundtracks, soundtracks_folder, item["url"], game_name)
         executor.submit(process_videos, videos_folder, item["youtube"]["url"], game_name)
+
+
+# Processar cada item no JSON
+with ThreadPoolExecutor(max_workers=2) as executor:
+    executor.map(process_item, data)
