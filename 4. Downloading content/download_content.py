@@ -95,26 +95,27 @@ def slice_video_into_frames(video_path, game_name):
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"File not found: {video_path}")
 
-    video_dir = os.path.dirname(video_path)
-    video_name = os.path.basename(video_path)
-    video_name_without_ext, video_ext = os.path.splitext(video_name)
-    output_template = os.path.join(video_dir, f"{game_name}_%05d{video_ext}")
-
-    # Use ffmpeg to slice the video into 10-second frames
     try:
+        video_dir = os.path.dirname(video_path)
+        video_name = os.path.basename(video_path)
+        video_name_without_ext, video_ext = os.path.splitext(video_name)
+        output_template = os.path.join(video_dir, f"{game_name}_%05d{video_ext}")
+
+        # Use ffmpeg to slice the video into 10-second frames
         (
             ffmpeg.input(video_path)
             .output(output_template, f="segment", segment_time=10, reset_timestamps=1, g=30)
             .run(overwrite_output=True)
         )
+        
+        os.remove(video_path)
+        
     except ffmpeg.Error as e:
         raise RuntimeError(f"Error slicing video: {e.stderr.decode()}") from e
-
-    # Delete the original video
-    try:
-        os.remove(video_path)
     except OSError as e:
         raise RuntimeError(f"Error deleting original video: {e}")
+    except Exception as e:
+        raise RuntimeError(f"Error slicing video: {e}") from e
 
     print(f"Video sliced successfully and original video deleted. Slices saved as: {output_template}") 
 
