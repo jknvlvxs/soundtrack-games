@@ -124,15 +124,11 @@ with open(data_file, "r", encoding="utf-8") as f:
     data = json.load(f)
 
 # Filtrar data para teste
-# filter_games = ["top-anglers-super-fishing-big-fight-2"]
-filter_games = ["top-gear", "toy-story-1996"]
-data = [item for item in data if item["slug"] in filter_games]
+# filter_games = ["top-anglers-super-fishing-big-fight-2, "top-gear", "toy-story-1996"]
+# data = [item for item in data if item["slug"] in filter_games]
 
 # Filtrar data por console via argumento
-# data = [item for item in data if item["system"] == sys.argv[1]]
-
-# Filtrar objetos sem atributo "youtube"
-data = [item for item in data if "youtube" in item]
+data = [item for item in data if item["system"] == sys.argv[1] and "youtube" in item]
 
 # Processar cada item no JSON
 for item in data:
