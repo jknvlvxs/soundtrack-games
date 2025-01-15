@@ -77,7 +77,7 @@ def extract_archive(file_path, extract_to):
 # Função para baixar vídeos do YouTube
 def download_youtube_video(url, path):
     try:
-        yt = YouTube(url, on_progress_callback=on_progress)
+        yt = YouTube(url, use_po_token=True, on_progress_callback=on_progress)
         print(f"→ Baixando vídeo do YouTube: '{yt.title}'")
 
         video_stream = yt.streams.get_lowest_resolution()
@@ -125,7 +125,7 @@ with open(data_file, "r", encoding="utf-8") as f:
     data = json.load(f)
 
 # Filtrar data para teste
-# filter_games = ["top-anglers-super-fishing-big-fight-2", "top-management-ii", "touge-densetsu-saisoku-battle"]
+# filter_games = ["dragons-earth"]
 # data = [item for item in data if item["slug"] in filter_games]
 
 # Filtrar data por console via argumento
@@ -169,3 +169,6 @@ def process_item(item):
 # Processar cada item no JSON
 with ThreadPoolExecutor(max_workers=2) as executor:
     executor.map(process_item, data)
+
+# for item in data:
+    # process_item(item)
