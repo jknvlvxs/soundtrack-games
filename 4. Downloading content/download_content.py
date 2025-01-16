@@ -77,7 +77,7 @@ def extract_archive(file_path, extract_to):
 # Função para baixar vídeos do YouTube
 def download_youtube_video(url, path):
     try:
-        yt = YouTube(url, use_po_token=True, on_progress_callback=on_progress)
+        yt = YouTube(url, use_oauth=True, allow_oauth_cache=True, on_progress_callback=on_progress)
         print(f"→ Baixando vídeo do YouTube: '{yt.title}'")
 
         video_stream = yt.streams.get_lowest_resolution()
@@ -89,7 +89,10 @@ def download_youtube_video(url, path):
             print("→ Nenhum stream disponível para download.")
 
     except Exception as e:
-        print(f"Erro ao baixar vídeo do YouTube: {e}")
+        error_message = str(e)
+        print(f"Erro ao baixar vídeo do YouTube: {error_message}")
+        if "bot" in error_message.lower():
+            sys.exit(1)
 
 def slice_video_into_frames(video_path, game_name):
     if not os.path.exists(video_path):
