@@ -32,27 +32,27 @@ year_counts = Counter(years)
 
 # Create graphs
 # Graph 1: Games per System
-plt.figure(figsize=(10, 5))
+plt.figure(figsize=(16, 8))
 plt.bar(system_counts.keys(), system_counts.values(), color="skyblue")
-plt.title("Number of Games per System")
-plt.xlabel("System")
-plt.ylabel("Number of Games")
-plt.xticks(rotation=45)
+plt.title("Jogos coletados por console")
+plt.xlabel("Console")
+plt.ylabel("Número de Jogos")
+plt.xticks(rotation=45, ha="right")
 plt.tight_layout()
+plt.subplots_adjust(bottom=0.2)
 plt.show()
 
-print(year for year in year_counts.items() if year >= 2025)
-
-filtered_year_counts = {
-    year: count for year, count in year_counts.items() if 1900 <= year <= 2025
-}
+filtered_year_counts = {year: count for year, count in year_counts.items() if 1900 <= year <= 2025}
 
 # Graph 2: Games per Year
-plt.figure(figsize=(10, 5))
+average_games = sum(filtered_year_counts.values()) / len(filtered_year_counts)
+plt.figure(figsize=(16, 8))
 plt.bar(filtered_year_counts.keys(), filtered_year_counts.values(), color="lightgreen")
-plt.title("Number of Games per Year")
-plt.xlabel("Year")
-plt.ylabel("Number of Games")
+plt.axhline(y=average_games, color='red', linestyle=':', label=f'Average: {average_games:.2f}')
+plt.title("Jogos coletados por ano")
+plt.xlabel("Ano")
+plt.ylabel("Número de Jogos")
 plt.xticks(rotation=45)
 plt.tight_layout()
+plt.legend()
 plt.show()
