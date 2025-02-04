@@ -6,3 +6,6 @@
 
 .env
 *.out
+
+env/
+test_dataset/
