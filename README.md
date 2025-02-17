@@ -92,3 +92,11 @@ The list of consoles slugs are:
 ```
 docker-compose up
 ```
+
+```
+python3.7 -m venv env
+source env/bin/activate
+pip install -r requirements.txt
+<!-- python3.7 dejavu_mapping.py -->
+python3.7 mapping.py --console console_slug
+```
