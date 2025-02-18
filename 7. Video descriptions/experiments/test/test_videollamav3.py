@@ -113,7 +113,7 @@ for exp_vid in experiment_videos:
         processor = AutoProcessor.from_pretrained(MODEL_PATH, trust_remote_code=True)
 
         inputs = processor(
-            conversation=conversation, #TODO batch???
+            conversation=conversation,
             add_system_prompt=True,
             add_generation_prompt=True,
             return_tensors="pt"
