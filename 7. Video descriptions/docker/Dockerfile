@@ -27,8 +27,8 @@ RUN python3 -m pip install -r video_desc_req.txt
 # -it \
 # --name=videollama3 \
 # --name videollama3 \
-# --mount type=bind,source="/home/es119256/vmdb/7. Video descriptions",target=/app/code \
-# --mount type=bind,source="/home/es119256/datasets/vmdb/",target=/app/dataset,readonly,bind-propagation=rslave \
+# --mount type=bind,source="/home/es119256/vmdb/7. Video descriptions",target=/app/code,bind-propagation=rshared \
+# --mount type=bind,source="/home/es119256/datasets/vmdb/",target=/app/dataset,bind-propagation=rshared \
 # videollama3
 
 # docker exec -it videollama3 sh

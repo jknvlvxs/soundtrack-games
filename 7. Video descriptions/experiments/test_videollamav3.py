@@ -124,7 +124,7 @@ for exp_vid in experiment_videos:
         if "pixel_values" in inputs:
             inputs["pixel_values"] = inputs["pixel_values"].to(torch.bfloat16)
 
-        output_ids = model.generate(**inputs, max_new_tokens=2048, top_k=param.top_k)
+        output_ids = model.generate(**inputs, max_new_tokens=512, top_k=param.top_k)
         response = processor.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
 
         elapsed_time = time.process_time() - start_time
