@@ -25,7 +25,6 @@ RUN python3 -m pip install -r video_desc_req.txt
 # --gpus all \
 # -d \
 # -it \
-# --name=videollama3 \
 # --name videollama3 \
 # --mount type=bind,source="/home/es119256/vmdb/7. Video descriptions",target=/app/code,bind-propagation=rshared \
 # --mount type=bind,source="/home/es119256/datasets/vmdb/",target=/app/dataset,bind-propagation=rshared \

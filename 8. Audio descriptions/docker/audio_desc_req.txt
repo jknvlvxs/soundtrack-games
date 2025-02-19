@@ -1,0 +1,2 @@
+PyAudio==0.2.14
+BeatNet @ git+https://github.com/FelipeMarra/BeatNet@95c5acd36fbb426eb54f508a523ee80ef1c9a872
