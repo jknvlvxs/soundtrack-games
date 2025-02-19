@@ -8,3 +8,5 @@
 
 env/
 test_dataset/
+
+*__pycache__
