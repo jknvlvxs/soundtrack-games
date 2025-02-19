@@ -1,8 +1,7 @@
 {
     "database": {
-        "host": "localhost",
-        "user": "root",
-        "password": "root", 
-        "database": "dejavu"
+      "host": "localhost",
+      "user": "root",
+      "password": "root"
     }
 }
