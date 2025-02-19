@@ -4,12 +4,10 @@ import traceback
 import logging
 
 import atexit
-import multiprocessing
 import time
 from concurrent.futures import ProcessPoolExecutor
 import requests
 
-import ffmpeg
 from tqdm import tqdm
 
 import torch
@@ -74,8 +72,6 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
             vid_log_f = logging.FileHandler(result_txt_path, 'a', 'utf-8')
             vid_logger.addHandler(vid_log_f)
 
-            start_time = time.perf_counter()
-
             conversation = [
                 {"role": "system", "content": "You are a helpful assistant."},
                 {
@@ -108,9 +104,6 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
             output_ids = model.generate(**inputs, max_new_tokens=512, top_k=20)
             response = processor.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
 
-            elapsed_time = time.perf_counter() - start_time
-
-            g_loger.warning(f"{response}\n\n{video_file_name}: {elapsed_time}\n")
             vid_logger.warning(response)
 
             del processor
@@ -128,7 +121,6 @@ def get_videos_paths(directory):
             count = 0
             for f in sorted(filenames):
                 if count % GEN_EVERY == 0:
-                    print(f"count {count}; count % GEN_EVERY {count % GEN_EVERY}")
                     files.append(os.path.abspath(os.path.join(dirpath, f)))
                 count+=1
 
@@ -149,9 +141,8 @@ if __name__ == '__main__':
 
     # Parse arguments
     parser = argparse.ArgumentParser(description='videollama3.py')
-    # "../5. Database/nintendo-snes-spc/"
-    parser.add_argument('--dataset_root', type=str, default="/app/code/mock_dataset", help="path for the dataset games folder")
-    parser.add_argument('--n_processes', type=int, default=4, help="number of processes to run in parallel") 
+    parser.add_argument('--dataset_root', type=str, default="../5. Database/nintendo-snes-spc/", help="path for the dataset games folder")
+    parser.add_argument('--n_processes', type=int, default=16, help="number of processes to run in parallel") 
     args = parser.parse_args()
 
     # Collect videos
@@ -172,17 +163,12 @@ if __name__ == '__main__':
         if (idx+1) % PROCESSES_PER_GPU == 0:
             gpu += 1
 
-    for video_process in videos_process_list:
-        pid, gpu, videos_paths = video_process
-        print(videos_paths)
-        print(f"Process {pid} running on GPU {gpu} with {len(videos_paths)} videos, from from {videos_paths[0].split("/")[-1]} to {videos_paths[-1].split("/")[-1]}")
+    g_start_time = time.perf_counter()
 
-    # my_start_time = time.perf_counter()
+    # Create processes
+    with ProcessPoolExecutor(initializer=init_process) as executor:
+        executor.map(run_videollama, videos_process_list)
 
-    # # Create processes
-    # with ProcessPoolExecutor(initializer=init_process) as executor:
-    #     executor.map(run_videollama, videos_process_list)
+    g_elapsed_time = time.perf_counter() - g_start_time
 
-    # my_elapsed_time = time.perf_counter() - my_start_time
-
-    # g_loger.warning(f"\n\nIt took: {my_elapsed_time}")
+    g_loger.warning(f"\n\nIt took: {g_elapsed_time}")
