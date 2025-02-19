@@ -13,8 +13,10 @@ from tqdm import tqdm
 import torch
 from transformers import AutoModelForCausalLM, AutoProcessor
 
-DEVICE_START = 2 # Start from cuda:2 and occupy the ones that follow it
-PROCESSES_PER_GPU = 4 # One model running takes something like 16GB of VRAM, a A100 can take like 4 in parallel
+# Start from cuda:2 and occupy the ones that follow it
+DEVICE_START = 2
+# One model running takes something like 20GB of VRAM. One A100 can take like 4 in parallel but it is safer to use 3
+PROCESSES_PER_GPU = 3
 # Generate descriptions every STRIDE videos, e.g. if 10 it will take videos 0,10,20,30... which is equivalent to a stride of 9.
 # This is because adjacent videos will have similar descriptions.
 GEN_EVERY = 10
@@ -42,16 +44,16 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
     pid, gpu, videos_paths = video_process
     g_loger.warning(f"Process {pid} running on GPU {gpu} with {len(videos_paths)} videos, from from {videos_paths[0].split("/")[-1]} to {videos_paths[-1].split("/")[-1]}")
 
-    # Model
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL_PATH,
-        trust_remote_code=True,
-        device_map=gpu,
-        torch_dtype=torch.bfloat16,
-        attn_implementation="flash_attention_2",
-    )
-
     try:
+        # Model
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_PATH,
+            trust_remote_code=True,
+            device_map=gpu,
+            torch_dtype=torch.bfloat16,
+            attn_implementation="flash_attention_2",
+        )
+
         for video_path in tqdm(videos_paths, desc=f'Process {pid}'):
             game_folder = os.path.abspath(os.path.join(video_path, os.pardir, os.pardir))
 
@@ -59,10 +61,6 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
 
             video_file_name = video_path.split('/')[-1]
             result_txt_path = os.path.join(videos_descriptions_folder, video_file_name[:-3]+"txt")
-
-            if os.path.exists(result_txt_path):
-                tqdm.write(f"Skiped {video_file_name}")
-                continue
 
             if not os.path.isdir(videos_descriptions_folder):
                 os.mkdir(videos_descriptions_folder)
@@ -114,16 +112,28 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
     except Exception as e:
         g_loger.critical(traceback.format_exc())
 
-def get_videos_paths(directory):
+def get_videos_paths(dataset_folder):
     files = []
-    for dirpath,_,filenames in os.walk(directory):
-        if dirpath.endswith('/videos'):
-            count = 0
-            for f in sorted(filenames):
-                if count % GEN_EVERY == 0:
-                    files.append(os.path.abspath(os.path.join(dirpath, f)))
-                count+=1
+    skiped = 0 
+    for game_folder in sorted(os.listdir(dataset_folder)):
+        videos_folder = os.path.join(dataset_folder, game_folder, 'videos')
+        videos_descriptions_folder = os.path.join(dataset_folder, game_folder, 'videos_descriptions')
 
+        count = 0
+        for video_file in sorted(os.listdir(videos_folder)):
+            video_path = os.path.join(videos_folder, video_file)
+            result_txt_path = os.path.join(videos_descriptions_folder, video_file[:-3]+"txt")
+
+            if count % GEN_EVERY == 0:
+                if os.path.exists(result_txt_path):
+                    print(f"Skiped {video_file}")
+                    skiped+=1
+                else:
+                    files.append(video_path)
+
+            count+=1
+
+    print(f"SKIPED {skiped}")
     return files
 
 if __name__ == '__main__':
@@ -141,13 +151,16 @@ if __name__ == '__main__':
 
     # Parse arguments
     parser = argparse.ArgumentParser(description='videollama3.py')
-    parser.add_argument('--dataset_root', type=str, default="../5. Database/nintendo-snes-spc/", help="path for the dataset games folder")
-    parser.add_argument('--n_processes', type=int, default=16, help="number of processes to run in parallel") 
+    # "../5. Database/nintendo-snes-spc/"
+    parser.add_argument('--dataset_root', type=str, default="/app/dataset/nintendo-snes-spc", help="path for the dataset games folder")
+    parser.add_argument('--n_processes', type=int, default=15, help="number of processes to run in parallel") 
     args = parser.parse_args()
 
     # Collect videos
     videos_paths = get_videos_paths(args.dataset_root)
     n_videos = len(videos_paths)
+
+    print("NVIDEOS", n_videos)
 
     lin_div = torch.linspace(0, n_videos, args.n_processes+1, dtype=int).tolist()
 
