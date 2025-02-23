@@ -103,6 +103,7 @@ python3.7 mapping.py --console console_slug
 
 Tuning
 ```
-DEFAULT_FAN_VALUE = 15  # 15 was the original value.
-DEFAULT_AMP_MIN = 8 # 20 was the original value.
+DEFAULT_FAN_VALUE = 20  # 15 was the original value.
+DEFAULT_AMP_MIN = 5
+PEAK_NEIGHBORHOOD_SIZE = 5  # 20 was the original value.
 ```

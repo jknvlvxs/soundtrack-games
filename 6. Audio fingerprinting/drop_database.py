@@ -28,15 +28,15 @@ def restore_dataset(base_dir):
                             dest = os.path.join(videos_path, arquivo)
                             shutil.move(src, dest)
 
-                        if arquivo.endswith(".mp3"):
-                            os.remove(os.path.join(soundtrack_path, arquivo))
-
                     os.rmdir(soundtrack_path)
+
+            for arquivo in os.listdir(videos_path):
+                if arquivo.endswith(".mp3"):
+                    os.remove(os.path.join(videos_path, arquivo))
 
         mapping_log_path = os.path.join(game_path, "mapping_log.csv")
         if os.path.exists(mapping_log_path):
             os.remove(mapping_log_path)
-
 
 def drop_database(db_config_path, console, game):
     try:
@@ -74,14 +74,10 @@ if __name__ == "__main__":
     for game in tqdm(games_folders):
         drop_database("config.json", args.console, game)
 
-    confirm_restore = input("Você TEM CERTEZA que deseja restaurar a base de dados? (y/n): ")
+    # confirm_restore = input("Você TEM CERTEZA que deseja restaurar a base de dados? (y/n): ")
 
-    if confirm_restore.lower() != "y":
-        print("Restauração cancelada.")
-        exit()
+    # if confirm_restore.lower() != "y":
+    #     print("Restauração cancelada.")
+    #     exit()
 
-    path = os.path.dirname(__file__)
-    base_dir = os.path.join(path, "")
-    base_directory = path + "/../5. Database/nintendo-snes-spc"
-
-    restore_db(base_directory)
+    restore_dataset(dataset_path)
