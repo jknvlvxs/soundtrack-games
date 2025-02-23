@@ -71,7 +71,7 @@ if __name__ == "__main__":
             tqdm.write(f"Generating fingerpint for game {game}")
             djv.fingerprint_directory(soundtrack_folder_path, [".mp3"], args.nprocesses)
 
-            log_string = "video,soundtrack,input_confidence,fingerprint_confidence\n"
+            log_string = "video,soundtrack,input_confidence,fingerprinted_confidence\n"
             tqdm.write(log_string)
             with open(mapping_log_path, "w", encoding="UTF8") as f:
                 f.write(log_string)
@@ -99,11 +99,11 @@ if __name__ == "__main__":
                 results = results["results"][0]
                 song_name = results["song_name"].decode("utf-8")
                 input_confidence = str(results["input_confidence"])
-                fingerprint_confidence = str(results["fingerprint_confidence"])
+                fingerprinted_confidence = str(results["fingerprinted_confidence"])
 
-                log_string = f"{video},{song_name},{input_confidence},{fingerprint_confidence}\n"
+                log_string = f"{video},{song_name},{input_confidence},{fingerprinted_confidence}\n"
                 tqdm.write(log_string)
-                with open(mapping_log_path, "w", encoding="UTF8") as f:
+                with open(mapping_log_path, "a", encoding="UTF8") as f:
                     f.write(log_string)
 
                 video_subfolder = os.path.join(video_folder_path, song_name)
