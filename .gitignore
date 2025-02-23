@@ -4,5 +4,9 @@
 *.mp4
 *.html
 
-.env
 *.out
+
+env/
+test_dataset/
+
+*__pycache__
