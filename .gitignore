@@ -5,6 +5,7 @@
 *.html
 
 *.out
+*.bkp
 
 env/
 test_dataset/
