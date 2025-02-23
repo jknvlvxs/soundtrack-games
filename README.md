@@ -78,5 +78,32 @@ python collect_youtube.py | tee -a youtube.txt
 
 ## Downloading Content
 ```
-python download_content.py
+python download_content.py console_slug
+```
+
+The list of consoles slugs are:
+- `nintendo-snes-spc`
+
+## Audio Fingerprinting
+
+### Create mysql database for dejavu using docker
+6. Audio fingerprinting
+  
+```
+docker-compose up
+```
+
+```
+python3.7 -m venv env
+source env/bin/activate
+pip install -r requirements.txt
+<!-- python3.7 dejavu_mapping.py -->
+python3.7 mapping.py --console console_slug
+```
+
+Tuning
+```
+DEFAULT_FAN_VALUE = 10  # 15 was the original value.
+DEFAULT_AMP_MIN = 7
+PEAK_NEIGHBORHOOD_SIZE = 7  # 20 was the original value.
 ```
