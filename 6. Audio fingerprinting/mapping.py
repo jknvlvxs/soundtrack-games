@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
                 tqdm.write(f"Extracting audio from video video: {video}")
                 stream = ffmpeg.input(video_path)
-                stream = ffmpeg.output(stream, audio_path, loglevel="error")
+                stream = ffmpeg.output(stream, audio_path, loglevel="quiet")
                 ffmpeg.run(stream)
 
                 results = djv.recognize(FileRecognizer, audio_path)
