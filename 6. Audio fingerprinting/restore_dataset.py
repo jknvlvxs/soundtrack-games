@@ -18,6 +18,9 @@ def restore_db(base_dir):
                             dest = os.path.join(videos_path, arquivo)
                             shutil.move(src, dest)
 
+                        if arquivo.endswith(".mp3"):
+                            os.remove(os.path.join(soundtrack_path, arquivo))
+
                     os.rmdir(soundtrack_path)
 
         mapping_log_path = os.path.join(game_path, "mapping_log.csv")

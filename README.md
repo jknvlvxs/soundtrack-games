@@ -100,3 +100,9 @@ pip install -r requirements.txt
 <!-- python3.7 dejavu_mapping.py -->
 python3.7 mapping.py --console console_slug
 ```
+
+Tuning
+```
+DEFAULT_FAN_VALUE = 15  # 15 was the original value.
+DEFAULT_AMP_MIN = 8 # 20 was the original value.
+```
