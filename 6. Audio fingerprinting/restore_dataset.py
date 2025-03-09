@@ -1,6 +1,6 @@
 import os
 import shutil
-
+import argparse
 
 def restore_db(base_dir):
     for game in os.listdir(base_dir):
@@ -30,12 +30,16 @@ def restore_db(base_dir):
 
 
 if __name__ == "__main__":
-    path = os.path.dirname(__file__)
-    base_dir = os.path.join(path, "")
-    base_directory = path + "/../5. Database/nintendo-snes-spc"
+    parser = argparse.ArgumentParser(description="restore_dataset.py")
+    # parser.add_argument("--dataset_root", type=str, default="../5. Database/", help="path for the dataset games folder")
+    parser.add_argument("--dataset_root", type=str, default="/app/dataset/", help="path for the dataset games folder")
+    parser.add_argument("--console", type=str, default="nintendo-snes-spc", help="selected console")
+    args = parser.parse_args()
+
+    base_directory = args.dataset_root + args.console
 
     confirm_restore = input("Você TEM CERTEZA que deseja restaurar a base de dados? (y/n): ")
-    
+
     if confirm_restore.lower() != 'y':
         print('Restauração cancelada.')
         exit()

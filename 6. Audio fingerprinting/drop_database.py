@@ -63,10 +63,12 @@ def drop_database(db_config_path, console, game):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="dejavu.py")
+    # parser.add_argument("--dataset_root", type=str, default="../5. Database/", help="path for the dataset games folder")
+    parser.add_argument("--dataset_root", type=str, default="/app/dataset/", help="path for the dataset games folder")
     parser.add_argument("--console", type=str, default="nintendo-snes-spc", help="selected console")
     args = parser.parse_args()
 
-    dataset_path = f"../5. Database/{args.console}"
+    dataset_path = args.dataset_root + args.console
 
     games_folders = sorted(os.listdir(dataset_path))
     n_games = len(games_folders)
