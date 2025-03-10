@@ -22,7 +22,7 @@ RUN python3 -m pip install decord==0.6.0
 RUN python3 -m pip install -r video_desc_req.txt
 
 # docker run \
-# --gpus all \
+# --gpus '"device=2,3,4"' \
 # -d \
 # -it \
 # --name=videollama3 \
