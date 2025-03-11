@@ -2,6 +2,9 @@ import os
 import time
 import shutil
 import logging
+import random
+
+import numpy as np
 
 import torch
 from transformers import AutoModelForCausalLM, AutoProcessor
@@ -9,37 +12,49 @@ from transformers import AutoModelForCausalLM, AutoProcessor
 from params import Params
 
 # Consts
-DEVICE = "cuda:1"
+DEVICE = "cuda:0"
 MODEL_PATH = "DAMO-NLP-SG/VideoLLaMA3-7B"
 ROOT = "/app/dataset/nintendo-snes-spc"
-RES_FOLDER = "./results"
+SEED = 2025
+FPS = 5
+TOPK = 20
+RES_FOLDER = f"./results_p1_seed_{SEED}_{FPS}_fps_{TOPK}_topk"
+
+# Set seed
+random.seed(SEED)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+torch.cuda.manual_seed_all(SEED)
 
 # Set of params
 params = [
-    Params(),
-    Params(1, 1),
-    Params(1, 20, "You will receive gameplays and should highlight useful features for creating a song."),
-    Params(5),
-    Params(5, 1),
-    Params(5, 20, "You will receive gameplays and should highlight useful features for creating a song.")
+    #Params(),
+    #Params(1, 1),
+    #Params(1, 20, "You will receive gameplays and should highlight useful features for creating a song."),
+    Params(FPS, TOPK),
+    #Params(5, 1),
+    #Params(5, 20, "You will receive gameplays and should highlight useful features for creating a song.")
 ]
 
 # Videos
 ALADIN = "aladdin/videos/aladdin_00169.mp4"
+ALADIN_CUT = "aladdin/videos/aladdin_00003.mp4" # CUT SCENE
 AIRCAV = "air-cavalry/videos/air-cavalry_00065.mp4"
 BEETHOVEN = "beethoven-the-ultimate-canine-caper/videos/beethoven-the-ultimate-canine-caper_00061.mp4"
 ALIEN_PREDATOR = "alien-vs-predator/videos/alien-vs-predator_00355.mp4" 
-ALIEN_PREDATOR_MENU = "alien-vs-predator/videos/alien-vs-predator_00155.mp4" 
+ALIEN_PREDATOR_MENU = "alien-vs-predator/videos/alien-vs-predator_00155.mp4" # MENU
 CAPCOM_SOCCER = "capcoms-soccer-shootout/videos/capcoms-soccer-shootout_00023.mp4"
-CHRONO_DIALOG = "chrono-trigger/videos/chrono-trigger_01615.mp4"
+CHRONO_DIALOG = "chrono-trigger/videos/chrono-trigger_01615.mp4" # DIALOG
 DINOCITY = "dinocity/videos/dinocity_00193.mp4"
 DKC3 = "donkey-kong-country-3-dixie-kongs-double-trouble/videos/donkey-kong-country-3-dixie-kongs-double-trouble_00199.mp4"
 FZERO = "f-zero/videos/f-zero_00053.mp4"
 SUPERR = "super-r-type/videos/super-r-type_00225.mp4"
 SUPERMARIO = "super-mario-all-stars/videos/super-mario-all-stars_00127.mp4"
-MARIOKART= "super-mario-kart/videos/super-mario-kart_00009.mp4"
+MARIOKART = "super-mario-kart/videos/super-mario-kart_00009.mp4"
+ZELDA_INVENTORY = "legend-of-zelda-the-a-link-to-the-past/videos/legend-of-zelda-the-a-link-to-the-past_00985.mp4" # INVENTORY
 
-experiment_videos = [ALADIN, AIRCAV, BEETHOVEN, ALIEN_PREDATOR, ALIEN_PREDATOR_MENU, CAPCOM_SOCCER, CHRONO_DIALOG, DINOCITY, DKC3, FZERO, SUPERR, SUPERMARIO, MARIOKART]
+experiment_videos = [ALADIN_CUT, ALADIN, AIRCAV, BEETHOVEN, ALIEN_PREDATOR, ALIEN_PREDATOR_MENU, CAPCOM_SOCCER, CHRONO_DIALOG, DINOCITY, DKC3, FZERO, SUPERR, SUPERMARIO,  MARIOKART, ZELDA_INVENTORY]
+#experiment_videos = [ALADIN_CUT]
 
 if not os.path.isdir(RES_FOLDER):
     os.mkdir(RES_FOLDER)
@@ -101,6 +116,14 @@ for exp_vid in experiment_videos:
                 "role": "user",
                 "content": [
                     {"type": "video", "video": {"video_path":cp_video_path, "fps": param.fps}},
+                    
+                    # P2
+                    {"type": "text", "text": "What is the type of scene in this gameplay video?"},
+                    {"type": "text", "text": "If it is a menu, a map, or other kind of static scene, describe the possible options, text and background."},
+                    {"type": "text", "text": "If it is a gameplay, describe the actions happening, the environment, the movement speed and the game mechanics."},
+                    {"type": "text", "text": "Describe the game art style and game genre."},
+
+                    # P1
                     {"type": "text", "text": "What are the actions happening in the video?"},
                     {"type": "text", "text": "How does the game environment look like?"},
                     {"type": "text", "text": "Describe the game art style."},

@@ -13,8 +13,8 @@ from tqdm import tqdm
 import torch
 from transformers import AutoModelForCausalLM, AutoProcessor
 
-# Start from cuda:2 and occupy the ones that follow it
-DEVICE_START = 2
+# Start from cuda:0 and occupy the ones that follow it
+DEVICE_START = 0
 # One model running takes something like 20GB of VRAM. One A100 can take like 4 in parallel but it is safer to use 3
 PROCESSES_PER_GPU = 3
 # Generate descriptions every STRIDE videos, e.g. if 10 it will take videos 0,10,20,30... which is equivalent to a stride of 9.
@@ -76,11 +76,10 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
                     "role": "user",
                     "content": [
                         {"type": "video", "video": {"video_path":video_path, "fps": 5}},
-                        {"type": "text", "text": "What are the actions happening in the video?"},
-                        {"type": "text", "text": "How does the game environment look like?"},
-                        {"type": "text", "text": "Describe the game art style."},
-                        {"type": "text", "text": "What is the movement speed in the video?"},
-                        {"type": "text", "text": "What are the game mechanics and its genre?"},
+                        {"type": "text", "text": "What is the type of scene in this gameplay video?"},
+                        {"type": "text", "text": "If it is a menu, a map, or other kind of static scene, describe the possible options, text and background."},
+                        {"type": "text", "text": "If it is a gameplay, describe the actions happening, the environment, the movement speed and the game mechanics."},
+                        {"type": "text", "text": "Describe the game art style and game genre."},
                     ]
                 }
             ]
@@ -153,7 +152,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='videollama3.py')
     # "../5. Database/nintendo-snes-spc/"
     parser.add_argument('--dataset_root', type=str, default="/app/dataset/nintendo-snes-spc", help="path for the dataset games folder")
-    parser.add_argument('--n_processes', type=int, default=15, help="number of processes to run in parallel") 
+    parser.add_argument('--n_processes', type=int, default=9, help="number of processes to run in parallel") 
     args = parser.parse_args()
 
     # Collect videos
