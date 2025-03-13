@@ -36,7 +36,7 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
         Run inference in VideoLlama on a set of videos
 
         Args:
-            video_process: a tuple containing a int to identify the process, a string with the device like "cuda:0", a list of paths to the videos
+            video_process: a tuple containing a int to identify the process, a string with the device like "cuda:0" and a list of tuples with the video path and the video description folder
 
         Will create a folder called videos_descriptions in the videos parent dir containing the descricriptions in txt files with the same name
         as the videos files
@@ -46,8 +46,9 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
     g_loger = logging.getLogger('global_logger')
 
     pid, gpu, videos_paths = video_process
-    g_loger.warning(f"Process {pid} running on GPU {gpu} with {len(videos_paths)} videos, from from {videos_paths[0].split("/")[-1]} to {videos_paths[-1].split("/")[-1]}")
+    g_loger.warning(f"Process {pid} running on GPU {gpu} with {len(videos_paths)} videos, from from {videos_paths[0][0].split("/")[-1]} to {videos_paths[-1][0].split("/")[-1]}")
 
+    video_path = "" #just a reference to this variable
     try:
         # Model
         model = AutoModelForCausalLM.from_pretrained(
@@ -59,9 +60,7 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
         )
 
         for video_path in tqdm(videos_paths, desc=f'Process {pid}'):
-            game_folder = os.path.abspath(os.path.join(video_path, os.pardir, os.pardir))
-
-            videos_descriptions_folder = os.path.join(game_folder, 'videos_descriptions')
+            video_path, videos_descriptions_folder = video_path
 
             video_file_name = video_path.split('/')[-1]
             result_txt_path = os.path.join(videos_descriptions_folder, video_file_name[:-3]+"txt")
@@ -113,6 +112,7 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
             del response
 
     except Exception as e:
+        g_loger.critical(f"Error for video {video_path}")
         g_loger.critical(traceback.format_exc())
 
 def get_videos_paths(dataset_folder):
@@ -123,20 +123,34 @@ def get_videos_paths(dataset_folder):
         videos_descriptions_folder = os.path.join(dataset_folder, game_folder, 'videos_descriptions')
 
         count = 0
-        for video_file in sorted(os.listdir(videos_folder)):
-            video_path = os.path.join(videos_folder, video_file)
-            result_txt_path = os.path.join(videos_descriptions_folder, video_file[:-3]+"txt")
+        for video_or_folder in sorted(os.listdir(videos_folder)):
+            # If it isn't a video, it will be a folder of videos with the name of the soundtrack identified in those videos
+            video_or_folder_path = os.path.join(videos_folder, video_or_folder)
 
-            if count % GEN_EVERY == 0:
-                if os.path.exists(result_txt_path):
-                    print(f"Skiped {video_file}")
-                    skiped+=1
-                else:
-                    files.append(video_path)
+            videos_in_folder = [] # to get the videos if video_or_folder_path is a folder
+            if os.path.isdir(video_or_folder_path):
+                for video_in_folder in sorted(os.listdir(video_or_folder_path)):
+                    video_in_folder_path = os.path.join(video_or_folder_path, video_in_folder)
+                    result_txt_path = os.path.join(videos_descriptions_folder, video_in_folder)[:-3]+"txt"
 
-            count+=1
+                    videos_in_folder.append((video_in_folder_path, result_txt_path))
+            else:
+                result_txt_path = os.path.join(videos_descriptions_folder, video_or_folder)[:-3]+"txt"
+                videos_in_folder.append((video_or_folder_path, result_txt_path))
 
-    print(f"SKIPED {skiped}")
+            for video_path_tuple in videos_in_folder:
+                video_path, result_txt_path = video_path_tuple
+
+                if count % GEN_EVERY == 0:
+                    if os.path.exists(result_txt_path):
+                        print(f"Skiped {video_path.split('/')[-1]}")
+                        skiped+=1
+                    else:
+                        files.append((video_path, videos_descriptions_folder))
+
+                count+=1
+
+    g_loger.warning(f"SKIPED {skiped}")
     return files
 
 if __name__ == '__main__':
@@ -160,10 +174,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Collect videos
-    videos_paths = get_videos_paths(args.dataset_root)
+    videos_paths = get_videos_paths(args.dataset_root) # list of tuples with the video path and the video description folder
     n_videos = len(videos_paths)
 
-    print("NVIDEOS", n_videos)
+    g_loger.warning(f"NVIDEOS {n_videos}")
 
     lin_div = torch.linspace(0, n_videos, args.n_processes+1, dtype=int).tolist()
 
