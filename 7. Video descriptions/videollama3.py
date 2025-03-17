@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 import argparse
 import traceback
 import logging
@@ -60,10 +61,11 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
         )
 
         for video_path in tqdm(videos_paths, desc=f'Process {pid}'):
-            video_path, videos_descriptions_folder = video_path
+            video_path, result_txt_path = video_path
 
-            video_file_name = video_path.split('/')[-1]
-            result_txt_path = os.path.join(videos_descriptions_folder, video_file_name[:-3]+"txt")
+            videos_descriptions_folder = os.path.abspath(os.path.join(result_txt_path, os.path.pardir))
+
+            video_file_name = result_txt_path.split('/')[-1]
 
             if not os.path.isdir(videos_descriptions_folder):
                 os.mkdir(videos_descriptions_folder)
@@ -123,13 +125,13 @@ def get_videos_paths(dataset_folder):
         videos_descriptions_folder = os.path.join(dataset_folder, game_folder, 'videos_descriptions')
 
         count = 0
-        for video_or_folder in sorted(os.listdir(videos_folder)):
+        videos_in_folder = [] # to get the videos if video_or_folder_path is a folder
+        for video_or_folder in os.listdir(videos_folder):
             # If it isn't a video, it will be a folder of videos with the name of the soundtrack identified in those videos
             video_or_folder_path = os.path.join(videos_folder, video_or_folder)
 
-            videos_in_folder = [] # to get the videos if video_or_folder_path is a folder
             if os.path.isdir(video_or_folder_path):
-                for video_in_folder in sorted(os.listdir(video_or_folder_path)):
+                for video_in_folder in os.listdir(video_or_folder_path):
                     video_in_folder_path = os.path.join(video_or_folder_path, video_in_folder)
                     result_txt_path = os.path.join(videos_descriptions_folder, video_in_folder)[:-3]+"txt"
 
@@ -138,19 +140,28 @@ def get_videos_paths(dataset_folder):
                 result_txt_path = os.path.join(videos_descriptions_folder, video_or_folder)[:-3]+"txt"
                 videos_in_folder.append((video_or_folder_path, result_txt_path))
 
-            for video_path_tuple in videos_in_folder:
-                video_path, result_txt_path = video_path_tuple
+        # Sort the videos
+        sort_videos_in_folder = deepcopy(videos_in_folder)
+        for idx in range(len(sort_videos_in_folder)):
+            sort_videos_in_folder[idx] = sort_videos_in_folder[idx][0].split('/')[-1]
 
-                if count % GEN_EVERY == 0:
-                    if os.path.exists(result_txt_path):
-                        print(f"Skiped {video_path.split('/')[-1]}")
-                        skiped+=1
-                    else:
-                        files.append((video_path, videos_descriptions_folder))
+        videos_in_folder = [val for _, val in sorted(zip(sort_videos_in_folder, videos_in_folder))]
 
-                count+=1
+        # Select with stride
+        for video_path_tuple in videos_in_folder:
+            video_path, result_txt_path = video_path_tuple
+
+            if count % GEN_EVERY == 0:
+                if os.path.exists(result_txt_path):
+                    print(f"Skiped {video_path.split('/')[-1]}")
+                    skiped+=1
+                else:
+                    files.append((video_path, result_txt_path))
+
+            count+=1
 
     g_loger.warning(f"SKIPED {skiped}")
+
     return files
 
 if __name__ == '__main__':
