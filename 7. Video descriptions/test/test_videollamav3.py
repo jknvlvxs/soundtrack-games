@@ -1,12 +1,16 @@
 import os
 import time
 import shutil
+import random
 import logging
 import random
 
 import numpy as np
 
+import numpy as np
+
 import torch
+import transformers
 from transformers import AutoModelForCausalLM, AutoProcessor
 
 from params import Params
@@ -15,30 +19,25 @@ from params import Params
 DEVICE = "cuda:0"
 MODEL_PATH = "DAMO-NLP-SG/VideoLLaMA3-7B"
 ROOT = "/app/dataset/nintendo-snes-spc"
-SEED = 2025
-FPS = 5
-TOPK = 20
-RES_FOLDER = f"./results_p1_seed_{SEED}_{FPS}_fps_{TOPK}_topk"
-
-# Set seed
-random.seed(SEED)
-np.random.seed(SEED)
-torch.manual_seed(SEED)
-torch.cuda.manual_seed_all(SEED)
+SEED = 42 # from many seeds tested, this was the best one
+RES_FOLDER = f"./results_seed{SEED}"
 
 # Set of params
 params = [
     #Params(),
     #Params(1, 1),
     #Params(1, 20, "You will receive gameplays and should highlight useful features for creating a song."),
-    Params(FPS, TOPK),
+    Params(5, 20),
     #Params(5, 1),
-    #Params(5, 20, "You will receive gameplays and should highlight useful features for creating a song.")
+    #3Params(5, 20, "You will receive gameplays and should highlight useful features for creating a song.")
 ]
+
+# Set seed
+transformers.set_seed(SEED)
 
 # Videos
 ALADIN = "aladdin/videos/aladdin_00169.mp4"
-ALADIN_CUT = "aladdin/videos/aladdin_00003.mp4" # CUT SCENE
+ALADIN_CUT = "aladdin/videos/aladdin_00003.mp4"
 AIRCAV = "air-cavalry/videos/air-cavalry_00065.mp4"
 BEETHOVEN = "beethoven-the-ultimate-canine-caper/videos/beethoven-the-ultimate-canine-caper_00061.mp4"
 ALIEN_PREDATOR = "alien-vs-predator/videos/alien-vs-predator_00355.mp4" 
@@ -53,8 +52,8 @@ SUPERMARIO = "super-mario-all-stars/videos/super-mario-all-stars_00127.mp4"
 MARIOKART = "super-mario-kart/videos/super-mario-kart_00009.mp4"
 ZELDA_INVENTORY = "legend-of-zelda-the-a-link-to-the-past/videos/legend-of-zelda-the-a-link-to-the-past_00985.mp4" # INVENTORY
 
-experiment_videos = [ALADIN_CUT, ALADIN, AIRCAV, BEETHOVEN, ALIEN_PREDATOR, ALIEN_PREDATOR_MENU, CAPCOM_SOCCER, CHRONO_DIALOG, DINOCITY, DKC3, FZERO, SUPERR, SUPERMARIO,  MARIOKART, ZELDA_INVENTORY]
-#experiment_videos = [ALADIN_CUT]
+#experiment_videos = [ALADIN, ALADIN_CUT, AIRCAV, BEETHOVEN, ALIEN_PREDATOR, ALIEN_PREDATOR_MENU, CAPCOM_SOCCER, CHRONO_DIALOG, DINOCITY, DKC3, FZERO, SUPERR, SUPERMARIO, MARIOKART]
+experiment_videos = [ALADIN_CUT]
 
 if not os.path.isdir(RES_FOLDER):
     os.mkdir(RES_FOLDER)
@@ -116,19 +115,19 @@ for exp_vid in experiment_videos:
                 "role": "user",
                 "content": [
                     {"type": "video", "video": {"video_path":cp_video_path, "fps": param.fps}},
-                    
+
+                    # P1
+                    #{"type": "text", "text": "What are the actions happening in the video?"},
+                    #{"type": "text", "text": "How does the game environment look like?"},
+                    #{"type": "text", "text": "Describe the game art style."},
+                    #{"type": "text", "text": "What is the movement speed in the video?"},
+                    #{"type": "text", "text": "What are the game mechanics and its genre?"},
+
                     # P2
                     {"type": "text", "text": "What is the type of scene in this gameplay video?"},
                     {"type": "text", "text": "If it is a menu, a map, or other kind of static scene, describe the possible options, text and background."},
                     {"type": "text", "text": "If it is a gameplay, describe the actions happening, the environment, the movement speed and the game mechanics."},
-                    {"type": "text", "text": "Describe the game art style and game genre."},
-
-                    # P1
-                    {"type": "text", "text": "What are the actions happening in the video?"},
-                    {"type": "text", "text": "How does the game environment look like?"},
-                    {"type": "text", "text": "Describe the game art style."},
-                    {"type": "text", "text": "What is the movement speed in the video?"},
-                    {"type": "text", "text": "What are the game mechanics and its genre?"},
+                    {"type": "text", "text": "Describe the game art style and genre."},
                 ]
             }
         ]
