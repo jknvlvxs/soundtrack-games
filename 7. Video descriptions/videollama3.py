@@ -20,9 +20,8 @@ SEED = 42
 DEVICE_START = 0
 # One model running takes something like 20GB of VRAM. One A100 can take like 4 in parallel but it is safer to use 3
 PROCESSES_PER_GPU = 3
-# Generate descriptions every STRIDE videos, e.g. if 10 it will take videos 0,10,20,30... which is equivalent to a stride of 9.
-# This is because adjacent videos will have similar descriptions.
-GEN_EVERY = 10
+# Generate descriptions every GEN_EVERY videos, e.g. if 10 it will take videos 0,10,20,30... which is equivalent to a stride of 9.
+GEN_EVERY = 1
 MODEL_PATH = "DAMO-NLP-SG/VideoLLaMA3-7B"
 
 session: requests.Session
@@ -37,17 +36,16 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
         Run inference in VideoLlama on a set of videos
 
         Args:
-            video_process: a tuple containing a int to identify the process, a string with the device like "cuda:0" and a list of tuples with the video path and the video description folder
+            video_process: a tuple containing a int to identify the process, a string with the device like "cuda:0" and a list of tuples with the video path and the video description path
 
-        Will create a folder called videos_descriptions in the videos parent dir containing the descricriptions in txt files with the same name
-        as the videos files
+        Will create a folder called videos_descriptions in the videos parent dir containing the descricriptions in txt files with the same name as the videos files
     """
     transformers.set_seed(SEED) # Always reset the seed to make every single example more easily reproducible
 
     g_loger = logging.getLogger('global_logger')
 
     pid, gpu, videos_paths = video_process
-    g_loger.warning(f"Process {pid} running on GPU {gpu} with {len(videos_paths)} videos, from from {videos_paths[0][0].split("/")[-1]} to {videos_paths[-1][0].split("/")[-1]}")
+    g_loger.warning(f"Process {pid} running on GPU {gpu} with {len(videos_paths)} videos, from {videos_paths[0][0].split('/')[-1]} to {videos_paths[-1][0].split('/')[-1]}")
 
     video_path = "" #just a reference to this variable
     try:
@@ -147,7 +145,7 @@ def get_videos_paths(dataset_folder):
 
         videos_in_folder = [val for _, val in sorted(zip(sort_videos_in_folder, videos_in_folder))]
 
-        # Select with stride
+        # Select with GEN_EVERY
         for video_path_tuple in videos_in_folder:
             video_path, result_txt_path = video_path_tuple
 

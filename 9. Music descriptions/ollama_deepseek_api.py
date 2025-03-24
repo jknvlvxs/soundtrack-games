@@ -48,7 +48,7 @@ class OllamaChat():
         payload = {
             "model": "deepseek-r1:70b",
             "stream": False,
-            "keep_alive":300,
+            "keep_alive":60,
             "options": {
                 "seed": self.seed,
                 "temperature": 0.4,
