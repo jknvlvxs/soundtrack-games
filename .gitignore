@@ -6,6 +6,7 @@
 
 *.out
 *.bkp
+*.log
 
 env/
 test_dataset/
