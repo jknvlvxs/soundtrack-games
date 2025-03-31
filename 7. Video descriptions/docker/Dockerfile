@@ -22,10 +22,9 @@ RUN python3 -m pip install decord==0.6.0
 RUN python3 -m pip install -r video_desc_req.txt
 
 # docker run \
-# --gpus all \
+# --gpus '"device=2,3,4"' \
 # -d \
 # -it \
-# --name=videollama3 \
 # --name videollama3 \
 # --mount type=bind,source="/home/es119256/vmdb/7. Video descriptions",target=/app/code,bind-propagation=rshared \
 # --mount type=bind,source="/home/es119256/datasets/vmdb/",target=/app/dataset,bind-propagation=rshared \
