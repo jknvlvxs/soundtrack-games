@@ -35,6 +35,7 @@ def get_genre_from_wiki(search_string: str) -> str|None:
     headers = {
         'User-Agent': "SNES-MVDB (felipemarra.com) getting-game-genres-for-reasearch"
     }
+    #TODO Try searching on https://m.wikidata.org/wiki/
     url = f"https://en.wikipedia.org/wiki/{page}"
 
     res = httpx.get(url, headers=headers)
