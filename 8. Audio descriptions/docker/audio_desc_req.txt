@@ -1,0 +1,5 @@
+PyAudio==0.2.14
+pyrubberband==0.4.0
+essentia
+chord-extractor @ git+https://github.com/FelipeMarra/chord-extractor@f8648e2571830ccb6862053127abb0aebc479dfe
+BeatNet @ git+https://github.com/FelipeMarra/BeatNet@e0535419a6013fea0e0b0fbc0afdc6ebe2bcd168
