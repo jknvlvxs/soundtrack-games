@@ -101,7 +101,20 @@ pip install -r requirements.txt
 python3.7 mapping.py --console console_slug
 ```
 
-Tuning
+### Running in container
+```
+docker network create vmdb_network
+
+cd docker/mysql
+docker build -t mysql .
+
+cd docker/python
+docker build -t dejavu .
+```
+
+The running command is on each Dockerfile
+
+### Tuning Dejavu
 ```
 DEFAULT_FAN_VALUE = 10  # 15 was the original value.
 DEFAULT_AMP_MIN = 7
