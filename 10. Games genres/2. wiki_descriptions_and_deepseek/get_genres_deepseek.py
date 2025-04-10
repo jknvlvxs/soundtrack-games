@@ -45,7 +45,7 @@ def get_deepseek_prompt(game_name, wiki_genres:list[str], descriptions:list[str]
 def get_deepseek_answer(deep_seek_prompt:str):
     chat = OllamaChat(1234, 1)
     res = chat.send(
-            "You will receive a game name, a possible list of genres of this game from wikidata and three descriptions of gameplay videos of that game. Your task will be to, given such information, determine the game genre as one of the following list: Shooters, Sports, Platform, RPG, Puzzle, Action, Fighting, Strategy, Simulation, Adventure, Racing. You must put your answer, that is, the genre chosen from the list, in quotes.",
+            "You will receive a game name, a possible list of genres of this game from wikidata and three descriptions of gameplay videos of that game. Your task will be to, given such information, determine the game genre as one of the following list: Shooters, Sports, Platform, RPG, Puzzle, Action, Fighting, Strategy, Simulation, Adventure, Racing. You must put your answer in between a genre tag, like <genre>CHOSEN_GENRE</genre>, where CHOSEN_GENRE is the genre you chose from the list.",
             setup=True
         )
 
@@ -57,7 +57,7 @@ def format_deepseek_answer(answer:str) -> dict[str, str]:
     split = answer.split('<think>\n', maxsplit=1)[1].split('\n</think>')
     think, genre = split
 
-    genre = genre.split('"')[1]
+    genre = genre.split('<genre>', maxsplit=1)[1].split('</genre>')[0]
 
     return {
         'think': think,
@@ -76,7 +76,7 @@ def main():
         descriptions_folder = os.path.join(ROOT, game_folder, 'videos_descriptions')
         save_path = os.path.join(ROOT, game_folder, 'genre.json')
 
-        if os.path.exists(save_path):
+        if (not os.path.exists(descriptions_folder)) or os.path.exists(save_path):
             print(f'Skipping {game_name}')
             continue
 
@@ -88,7 +88,8 @@ def main():
         with open(save_path, 'w') as json_file:
             json.dump(formated_answer, json_file, indent=4)
 
-        print(f'{game_name}: {formated_answer} \n\n')
+        genre = formated_answer["genre"]
+        print(f'{game_name}: {deepseek_answer}\nformated genre:{genre}\n\n')
 
 if __name__ == '__main__':
     main()
