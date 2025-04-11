@@ -17,7 +17,7 @@ def main():
 
         if genre not in valid_genres:
             print(f"{game_folder}: {genre}, {save_path}\n")
-            os.remove(save_path)
+            #os.remove(save_path) #letting it commented because this is kind of dangerous
 
 if __name__ == '__main__':
     main()
