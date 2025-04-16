@@ -11,33 +11,22 @@ if __name__ == '__main__':
 
     games_folders = sorted(os.listdir(args.dataset_root))
 
+    with open("deepseek_genres.csv", mode="r") as csv_file:
+        deepseek_genres = {row["game_id"]: row["genre"] for row in csv.DictReader(csv_file)}
+
+    output_csv_path = os.path.join("videos_info.csv")
+    with open(output_csv_path, mode="w", newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(["index", "game_id", "segment", "genre"])
+
     for game in tqdm(games_folders, total=len(games_folders)):
         video_folder_path = os.path.join(args.dataset_root, game, 'videos')
         game_videos = sorted(os.listdir(video_folder_path))
 
         tqdm.write(f"Mapping videos for {game}")
 
-        deepseek_genres_path = os.path.join("deepseek_genres.csv")
-        deepseek_genres = {}
-
-        if os.path.exists(deepseek_genres_path):
-            with open(deepseek_genres_path, mode="r") as csv_file:
-                reader = csv.DictReader(csv_file)
-                for row in reader:
-                    deepseek_genres[row["game_id"]] = row["genre"]
-        else:
-            raise FileNotFoundError(f"{deepseek_genres_path} not found.")
-
-        genre = deepseek_genres[game] if game in deepseek_genres else "unknown"
-
-        output_csv_path = os.path.join("videos_info.csv")
-
-        with open(output_csv_path, mode="w", newline="") as csv_file:
-            writer = csv.writer(csv_file)
-            writer.writerow(["index", "game_id", "segment", "genre"])
-
         for index, video in enumerate(game_videos, start=1):
-            video_path = os.path.join(video_folder_path, video)
+            genre = deepseek_genres.get(game, "unknown")
 
             with open(output_csv_path, mode='a', newline='') as csv_file:
                 writer = csv.writer(csv_file)
