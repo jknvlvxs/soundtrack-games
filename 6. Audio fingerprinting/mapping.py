@@ -19,7 +19,7 @@ def init_database(db_config_path, console, game):
             config = json.load(f)
 
             mydb = mysql.connector.connect(
-                host="localhost",
+                host=config["database"]["host"],
                 user=config["database"]["user"],
                 password=config["database"]["password"],
             )
@@ -42,11 +42,13 @@ def init_database(db_config_path, console, game):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="dejavu.py")
+    # parser.add_argument("--dataset_root", type=str, default="../5. Database/", help="path for the dataset games folder")
+    parser.add_argument("--dataset_root", type=str, default="/app/dataset/", help="path for the dataset games folder")
     parser.add_argument("--nprocesses", type=int, default=4, help="number of processes in fingerprint_directory function")
     parser.add_argument("--console", type=str, default="nintendo-snes-spc", help="selected console")
     args = parser.parse_args()
 
-    dataset_path = f"../5. Database/{args.console}"
+    dataset_path = args.dataset_root + args.console
 
     games_folders = sorted(os.listdir(dataset_path))
     n_games = len(games_folders)

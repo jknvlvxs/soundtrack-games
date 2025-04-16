@@ -1,6 +1,6 @@
 {
     "database": {
-      "host": "localhost",
+      "host": "mysql_container",
       "user": "root",
       "password": "root"
     }
