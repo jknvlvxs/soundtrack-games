@@ -120,3 +120,9 @@ DEFAULT_FAN_VALUE = 10  # 15 was the original value.
 DEFAULT_AMP_MIN = 7
 PEAK_NEIGHBORHOOD_SIZE = 7  # 20 was the original value.
 ```
+
+## Split dataset
+
+```
+python get_videos_info.py
+```
