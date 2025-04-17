@@ -1,14 +1,14 @@
 Segments per genre:
 genre
-RPG           111683
-Platform       61868
-Sports         37824
-Action         32639
-Strategy       28410
-Fighting       27543
-Shooters       21344
-Racing         16665
-Puzzle         14143
-Simulation     12607
-Adventure      11690
+RPG           45962
+Platform      24931
+Sports        18253
+Fighting      12498
+Action        12222
+Strategy      10038
+Shooters       8538
+Racing         8146
+Puzzle         6157
+Simulation     5292
+Adventure      4923
 Name: count, dtype: int64

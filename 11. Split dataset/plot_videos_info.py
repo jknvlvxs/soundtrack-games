@@ -1,13 +1,22 @@
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
+from tabulate import tabulate
 
 # Load CSV
-df = pd.read_csv("videos_info.csv")
+df = pd.read_csv("selected_videos_info.csv")
 
 # Segments per game_id
-segments_per_game = df["game_id"].value_counts()
-print("Segments per game_id:")
-print(segments_per_game)
+segments_per_game = df["game_id"].value_counts().reset_index()
+segments_per_game.columns = ["game_id", "segments"]
+
+table_str = tabulate(segments_per_game, headers="keys", tablefmt="github")
+
+os.makedirs("plots", exist_ok=True)
+
+# Save to file
+with open("plots/games_by_number_of_segments.txt", "w") as f:
+    f.write(table_str)
 
 # Segments per genre
 segments_per_genre = df["genre"].value_counts()
@@ -30,7 +39,8 @@ plt.xlabel("Game ID")
 plt.ylabel("Number of Segments")
 plt.xticks(rotation=45, ha="right")
 plt.tight_layout()
-plt.show()
+# plt.show()
+plt.savefig("plots/games_by_number_of_segments.png", bbox_inches="tight")
 
 # 2. Segments per genre
 plt.figure(figsize=(6, 6))
@@ -39,7 +49,8 @@ plt.title("Segments per Genre")
 plt.xlabel("Genre")
 plt.ylabel("Number of Segments")
 plt.tight_layout()
-plt.show()
+# plt.show()
+plt.savefig("plots/segments_per_genre.png", bbox_inches="tight")
 
 # 3. Percentage of segments per genre (as bar chart)
 plt.figure(figsize=(6, 6))
@@ -48,4 +59,5 @@ plt.title("Percentage of Segments per Genre")
 plt.xlabel("Genre")
 plt.ylabel("Percentage (%)")
 plt.tight_layout()
-plt.show()
+# plt.show()
+plt.savefig("plots/percentage_of_segments_per_genre.png", bbox_inches="tight")
