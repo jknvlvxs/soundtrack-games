@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
             soundtrack_dirs = sorted([d for d in os.listdir(video_folder_path) if os.path.isdir(os.path.join(video_folder_path, d)) and d.startswith("soundtrack_")])
 
-            for index, subfolder in enumerate(soundtrack_dirs):
+            for subfolder in soundtrack_dirs:
                 subfolder_path = os.path.join(video_folder_path, subfolder)
                 game_videos = sorted(os.listdir(subfolder_path))
 
