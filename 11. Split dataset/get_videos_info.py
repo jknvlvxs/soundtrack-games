@@ -6,10 +6,13 @@ from tqdm import tqdm
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='get_videos_info.py')
-    parser.add_argument('--dataset_root', type=str, default="../5. Database/nintendo-snes-spc/", help="path for the dataset games folder")
+    parser.add_argument("--dataset_root", type=str, default="/app/dataset/", help="path for the dataset games folder")
+    parser.add_argument("--console", type=str, default="nintendo-snes-spc", help="selected console")
     args = parser.parse_args()
 
-    games_folders = sorted(os.listdir(args.dataset_root))
+    dataset_path = args.dataset_root + args.console
+
+    games_folders = sorted(os.listdir(dataset_path))
 
     with open("deepseek_genres.csv", mode="r") as csv_file:
         deepseek_genres = {row["game_id"]: row["genre"] for row in csv.DictReader(csv_file)}
@@ -19,15 +22,23 @@ if __name__ == '__main__':
         writer = csv.writer(csv_file)
         writer.writerow(["index", "game_id", "segment", "genre"])
 
-    for game in tqdm(games_folders, total=len(games_folders)):
-        video_folder_path = os.path.join(args.dataset_root, game, 'videos')
-        game_videos = sorted(os.listdir(video_folder_path))
+        for game in tqdm(games_folders, total=len(games_folders)):
+            video_folder_path = os.path.join(dataset_path, game, "videos")
 
-        tqdm.write(f"Mapping videos for {game}")
+            if not os.path.isdir(video_folder_path):
+                continue
 
-        for index, video in enumerate(game_videos, start=1):
-            genre = deepseek_genres.get(game, "unknown")
+            soundtrack_dirs = sorted([d for d in os.listdir(video_folder_path) if os.path.isdir(os.path.join(video_folder_path, d)) and d.startswith("soundtrack_")])
 
-            with open(output_csv_path, mode='a', newline='') as csv_file:
-                writer = csv.writer(csv_file)
-                writer.writerow([index, game, video, genre])
+            for index, subfolder in enumerate(soundtrack_dirs):
+                subfolder_path = os.path.join(video_folder_path, subfolder)
+                game_videos = sorted(os.listdir(subfolder_path))
+
+                tqdm.write(f"Mapping videos for {game}")
+
+                for index, video in enumerate(game_videos, start=1):
+                    genre = deepseek_genres.get(game, "unknown")
+
+                    with open(output_csv_path, mode="a", newline="") as csv_file:
+                        writer = csv.writer(csv_file)
+                        writer.writerow([index, game, video, genre])
