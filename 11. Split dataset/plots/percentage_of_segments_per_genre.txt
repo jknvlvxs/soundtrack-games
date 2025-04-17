@@ -1,0 +1,14 @@
+Percentage of segments per genre:
+genre
+RPG           29.67
+Platform      16.44
+Sports        10.05
+Action         8.67
+Strategy       7.55
+Fighting       7.32
+Shooters       5.67
+Racing         4.43
+Puzzle         3.76
+Simulation     3.35
+Adventure      3.11
+Name: proportion, dtype: float64
