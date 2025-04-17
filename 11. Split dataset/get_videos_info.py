@@ -22,6 +22,8 @@ if __name__ == '__main__':
         writer = csv.writer(csv_file)
         writer.writerow(["index", "game_id", "segment", "genre"])
 
+        index = 1
+
         for game in tqdm(games_folders, total=len(games_folders)):
             video_folder_path = os.path.join(dataset_path, game, "videos")
 
@@ -36,9 +38,10 @@ if __name__ == '__main__':
 
                 tqdm.write(f"Mapping videos for {game}")
 
-                for index, video in enumerate(game_videos, start=1):
+                for video in game_videos:
                     genre = deepseek_genres.get(game, "unknown")
 
                     with open(output_csv_path, mode="a", newline="") as csv_file:
                         writer = csv.writer(csv_file)
                         writer.writerow([index, game, video, genre])
+                        index = index + 1
