@@ -1,0 +1,8 @@
+data_path: /app/code/experimetns/mock_dataset/legend-of-zelda-the-a-link-to-the-past/soundtracks
+beat_processor:
+  if_aux_click: False
+  aux_click_save_path: "/app/code/experimetns/mock_dataset/out"
+chord_processor:
+  if_process_group: False
+key_extraction:
+  correlation_threshold: 0.5

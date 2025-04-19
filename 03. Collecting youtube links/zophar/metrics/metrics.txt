@@ -1,0 +1,25 @@
+Total objects (.zip URL): 17233
+Total size (MB): 2237884
+
+Objects per system/console:
+  Nintendo NES: 1937
+  Nintendo DS: 1737
+  Nintendo SNES: 1600
+  Game Boy: 1533
+  Playstation Portable PSP: 1392
+  Playstation 2: 1314
+  Playstation: 1247
+  Sega Mega Drive / Genesis: 815
+  Nintendo 3DS: 762
+  TurboGrafx-16: 726
+  Game Boy Advance: 704
+  Sega Dreamcast: 554
+  Xbox 360: 525
+  Sega Saturn: 455
+  Playstation 3: 437
+  Nintendo Wii: 316
+  Nintendo GameCube: 302
+  Sega Game Gear: 255
+  Sega Master System: 250
+  Xbox: 223
+  Nintendo 64: 149

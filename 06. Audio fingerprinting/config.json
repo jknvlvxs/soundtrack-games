@@ -1,0 +1,7 @@
+{
+    "database": {
+      "host": "mysql_container",
+      "user": "root",
+      "password": "root"
+    }
+}

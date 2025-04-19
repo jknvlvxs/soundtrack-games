@@ -101,9 +101,38 @@ pip install -r requirements.txt
 python3.7 mapping.py --console console_slug
 ```
 
-Tuning
+### Running in container
+```
+docker network create vmdb_network
+
+cd docker/mysql
+docker build -t mysql .
+
+cd docker/python
+docker build -t dejavu .
+```
+
+The running command is on each Dockerfile
+
+### Tuning Dejavu
 ```
 DEFAULT_FAN_VALUE = 10  # 15 was the original value.
 DEFAULT_AMP_MIN = 7
 PEAK_NEIGHBORHOOD_SIZE = 7  # 20 was the original value.
+```
+
+## Games genres
+
+Generates deepseek_genres.csv to the next step
+
+## Split dataset
+
+```
+python get_videos_info.py
+
+will generate file videos_info.csv with all dataset
+
+get selected_videos.jsonl from step 07 to assert that every soundtrack will have at least one video selected
+
+filter videos_info.csv with the selected_videos.jsonl will generated selected_videos_info.csv
 ```
