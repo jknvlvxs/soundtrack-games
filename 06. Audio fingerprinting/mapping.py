@@ -3,7 +3,6 @@ import json
 import argparse
 import traceback
 import ffmpeg
-import sys
 
 import mysql.connector
 
@@ -25,6 +24,7 @@ def init_database(db_config_path, console, game):
             )
 
             database = console.replace("-", "_") + "_" + game.replace("-", "_").split("[")[0]
+            database = database[:64]
 
             config["database"]["database"] = database
 
@@ -42,10 +42,10 @@ def init_database(db_config_path, console, game):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="dejavu.py")
-    # parser.add_argument("--dataset_root", type=str, default="../5. Database/", help="path for the dataset games folder")
     parser.add_argument("--dataset_root", type=str, default="/app/dataset/", help="path for the dataset games folder")
     parser.add_argument("--nprocesses", type=int, default=4, help="number of processes in fingerprint_directory function")
     parser.add_argument("--console", type=str, default="nintendo-snes-spc", help="selected console")
+    parser.add_argument("--db_config", type=str, default="/app/code/config.json", help="path for the database config file")
     args = parser.parse_args()
 
     dataset_path = args.dataset_root + args.console
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     n_games = len(games_folders)
 
     for game in tqdm(games_folders):
-        djv = init_database("config.json", args.console, game)
+        djv = init_database(args.db_config, args.console, game)
         print("Total of fingerprints: ", djv.db.get_num_fingerprints())
 
         video_folder_path = os.path.join(dataset_path, game, "videos")

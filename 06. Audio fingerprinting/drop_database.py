@@ -50,6 +50,7 @@ def drop_database(db_config_path, console, game):
             )
 
             database = console.replace("-", "_") + "_" + game.replace("-", "_").split("[")[0]
+            database = database[:64]
 
             mycursor = mydb.cursor()
             mycursor.execute("DROP DATABASE IF EXISTS " + database + ";")
