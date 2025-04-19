@@ -20,7 +20,7 @@ if __name__ == '__main__':
     output_csv_path = os.path.join("videos_info.csv")
     with open(output_csv_path, mode="w", newline="") as csv_file:
         writer = csv.writer(csv_file)
-        writer.writerow(["index", "game_id", "segment", "genre"])
+        writer.writerow(["index", "game_id", "soundtrack", "segment", "genre"])
 
         index = 1
 
@@ -31,7 +31,6 @@ if __name__ == '__main__':
                 continue
 
             soundtrack_dirs = sorted([d for d in os.listdir(video_folder_path) if os.path.isdir(os.path.join(video_folder_path, d)) and d.startswith("soundtrack_")])
-
             for subfolder in soundtrack_dirs:
                 subfolder_path = os.path.join(video_folder_path, subfolder)
                 game_videos = sorted(os.listdir(subfolder_path))
@@ -43,5 +42,5 @@ if __name__ == '__main__':
 
                     with open(output_csv_path, mode="a", newline="") as csv_file:
                         writer = csv.writer(csv_file)
-                        writer.writerow([index, game, video, genre])
+                        writer.writerow([index, game, subfolder, video, genre])
                         index = index + 1
