@@ -127,12 +127,26 @@ Generates deepseek_genres.csv to the next step
 
 ## Split dataset
 
+> get_videos_info
 ```
 python get_videos_info.py
 
 will generate file videos_info.csv with all dataset
+```
 
+> selected_videos
+```
 get selected_videos.jsonl from step 07 to assert that every soundtrack will have at least one video selected
 
 filter videos_info.csv with the selected_videos.jsonl will generated selected_videos_info.csv
+```
+
+> plots
+```
+run plots to get dataset info
+```
+
+>
+```
+run split with selected_videos_info.csv
 ```

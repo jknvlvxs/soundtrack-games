@@ -13,4 +13,4 @@ with open('selected_videos.jsonl', 'r') as f:
 df = pd.read_csv('videos_info.csv')
 filtered_df = df[df['segment'].isin(selected_segments)]
 
-filtered_df.to_csv('selected_videos_info.csv', index=False)
+filtered_df.to_csv('videos_info.csv', index=False)
