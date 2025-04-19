@@ -134,11 +134,11 @@ python get_videos_info.py
 will generate file videos_info.csv with all dataset
 ```
 
-> selected_videos
+> load_downsample
 ```
 get selected_videos.jsonl from step 07 to assert that every soundtrack will have at least one video selected
 
-filter videos_info.csv with the selected_videos.jsonl will generated selected_videos_info.csv
+filter videos_info.csv with the selected_videos.jsonl will generate a new videos_info.csv
 ```
 
 > plots

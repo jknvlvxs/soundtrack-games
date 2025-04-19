@@ -31,7 +31,7 @@ if __name__ == "__main__":
     parser.add_argument("--downsampled", action="store_true", help="Use downsampled dataset")
     args = parser.parse_args()
 
-    data_dir = "selected_videos" if args.downsampled else "get_videos_info"
+    data_dir = "load_downsample" if args.downsampled else "get_videos_info"
     output_base = "downsample" if args.downsampled else "full"
     df = pd.read_csv(f"../{data_dir}/videos_info.csv")
 
