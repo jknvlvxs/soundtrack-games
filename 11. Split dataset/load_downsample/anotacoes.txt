@@ -1,16 +1,17 @@
 calcular o peso do gênero (p) com base na quantidade
 
-numero minimo = jogo com mais soundtracks * num de segmentos pra cada soundtrack * peso do genero (p)
-numero minimo = 25 * 5 * p = 125 * p = nm segmentos por jogo
 
-# remover jogos com menos de 60 segmentos
+s = quantis de 80%
+n = num_segmentos_para_soundtrack (arbitrario) = 5
+p = peso_do_genero
 
-contar n soundtracks por jogo, dividir nm / n = v, onde v é o numero de segmentos pra cada soundtrack
-pra cada soundtrack desse jogo, selecionar v segmentos linearmente espaçados
+numero_minimo = s * n * p
+numero_minimo = 25 * 5 * p = 125 * p
+
+contar ns soundtracks por jogo, dividir numero_minimo / ns = v, onde v é o numero de segmentos pra cada soundtrack
+pra cada soundtrack desse jogo, ordenar os segmentos e selecionar v segmentos linearmente espaçados, ignorando o primeiro e o último segmento
 
 quando pegar videos linearmente espaçados, ordenalos e usando pythorch ou numpy
 somar + 2 e ignorar o primeiro e último video 
-
-
 
 (pegar duração dos audios no dataset)
