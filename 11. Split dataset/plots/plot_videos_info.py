@@ -35,7 +35,7 @@ if __name__ == "__main__":
     output_base = "downsample" if args.downsampled else "full"
     df = pd.read_csv(f"../{data_dir}/videos_info.csv")
 
-    for p in ["soundtracks", "videos", "genres"]:
+    for p in ["soundtracks", "videos"]:
         ensure_dir(os.path.join(output_base, p))
 
     # SOUNDTRACKS
