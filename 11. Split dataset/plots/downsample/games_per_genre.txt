@@ -1,0 +1,13 @@
+|    | genre      |   num_games |
+|----|------------|-------------|
+|  0 | Action     |         126 |
+|  1 | Adventure  |          32 |
+|  2 | Fighting   |         107 |
+|  3 | Platform   |         255 |
+|  4 | Puzzle     |          45 |
+|  5 | RPG        |         127 |
+|  6 | Racing     |          55 |
+|  7 | Shooters   |          96 |
+|  8 | Simulation |          33 |
+|  9 | Sports     |         129 |
+| 10 | Strategy   |          45 |

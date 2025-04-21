@@ -2,45 +2,59 @@ import pandas as pd
 import numpy as np
 
 
+def calcular_pesos_genero(genre_counts, scaling_factor=1.5):
+    # Define o número alvo uniforme (baseado no menor gênero * fator)
+    uniform_target = int(genre_counts.min() * scaling_factor)
+
+    # Calcula pesos como razão entre alvo e atual, com máximo 1.0 (só downsample)
+    return (uniform_target / genre_counts).clip(upper=1.0).to_dict()
+
+
 def downsample(df, num_segments_per_soundtrack=5, percentile=80):
-    # Calcular número de vídeos por gênero
+    # Remover jogos com menos de 60 segmentos
+    game_counts = df["game_id"].value_counts()
+    valid_games = game_counts[game_counts >= 60].index
+    df = df[df["game_id"].isin(valid_games)]
+
+    # Calcula os pesos para cada gênero
     genre_counts = df["genre"].value_counts()
-    max_videos = genre_counts.max()
-    min_videos = genre_counts.min()
+    genre_weights = calcular_pesos_genero(genre_counts)
 
-    # Peso inversamente proporcional à quantidade de vídeos
-    genre_weights = ((max_videos - genre_counts) / (max_videos - min_videos)).to_dict()
-
-    # Calcular o quantil de 80% das soundtracks por jogo (s)
+    # Calcula o quantil definido para número de soundtracks por jogo
     soundtrack_counts = df.groupby("game_id")["soundtrack"].nunique()
-    s = int(np.percentile(soundtrack_counts.values, percentile))
+    s = int(np.percentile(soundtrack_counts.values, percentile))  # ex: 80% das trilhas têm até s
 
     dfs = []
 
-    # Agrupar por jogo
+    # Agrupa por jogo
     for game_id, game_group in df.groupby("game_id"):
         genre = game_group["genre"].iloc[0]
-        p = genre_weights.get(genre, 1.0)
+        p = genre_weights.get(genre, 1.0)  # peso para o gênero
         numero_minimo = int(s * num_segments_per_soundtrack * p)
 
+        # Número de trilhas sonoras no jogo
         soundtracks = game_group["soundtrack"].unique()
         ns = len(soundtracks)
+
+        # Quantos segmentos por trilha?
         v = max(int(numero_minimo / ns), 1)
 
-        # Processar cada soundtrack
+        # Para cada trilha, faz a amostragem linear
         for soundtrack in soundtracks:
             segment_group = game_group[game_group["soundtrack"] == soundtrack].sort_values(by="segment")
 
-            # Ignorar primeiro e último segmento
+            # Ignora o primeiro e o último segmento (como pedido)
             segments = segment_group.iloc[1:-1]
+
             if len(segments) <= v:
                 sampled = segments
             else:
-                # Selecionar v índices linearmente espaçados
                 indices = np.linspace(0, len(segments) - 1, v, dtype=int)
                 sampled = segments.iloc[indices]
+
             dfs.append(sampled)
 
+    # Junta tudo
     return pd.concat(dfs).reset_index(drop=True)
 
 
