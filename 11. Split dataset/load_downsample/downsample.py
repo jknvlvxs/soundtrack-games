@@ -28,29 +28,25 @@ def downsample(df, num_segments_per_soundtrack=5, percentile=80):
 
     # Agrupa por jogo
     for game_id, game_group in df.groupby("game_id"):
-        genre = game_group["genre"].iloc[0]
-        p = genre_weights.get(genre, 1.0)  # peso para o gênero
+        p = genre_weights.get(game_group["genre"].iloc[0], 1.0)  # peso para o gênero
         numero_minimo = int(s * num_segments_per_soundtrack * p)
 
         # Número de trilhas sonoras no jogo
         soundtracks = game_group["soundtrack"].unique()
-        ns = len(soundtracks)
 
         # Quantos segmentos por trilha?
-        v = max(int(numero_minimo / ns), 1)
+        v = max(int(numero_minimo / len(soundtracks)), 1)
 
         # Para cada trilha, faz a amostragem linear
         for soundtrack in soundtracks:
-            segment_group = game_group[game_group["soundtrack"] == soundtrack].sort_values(by="segment")
-
-            # Ignora o primeiro e o último segmento (como pedido)
-            segments = segment_group.iloc[1:-1]
+            segments = game_group[game_group["soundtrack"] == soundtrack].sort_values(by="segment")
 
             if len(segments) <= v:
                 sampled = segments
             else:
-                indices = np.linspace(0, len(segments) - 1, v, dtype=int)
-                sampled = segments.iloc[indices]
+                # Ignora o primeiro e o último segmento
+                indices = np.linspace(0, len(segments) - 1, v + 2, dtype=int)
+                sampled = segments.iloc[indices[1:-1]]
 
             dfs.append(sampled)
 

@@ -140,6 +140,7 @@ get selected_videos.jsonl from step 07 to assert that every soundtrack will have
 
 filter videos_info.csv with the selected_videos.jsonl will generate a new videos_info.csv
 ```
+> cd load_downsample
 
 > python downsample.py && cd ../plots && python plot_videos_info.py --downsampled && cd ../load_downsample
 
