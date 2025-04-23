@@ -9,7 +9,6 @@ def remove_by_n_of_segments(df:pd.DataFrame, n_segments:int=60) -> tuple[pd.Data
         Returns:
             A df with the valid games and another with the invalid ones.
     """
-
     game_counts = df["game_id"].value_counts()
 
     valid_games = game_counts[game_counts >= n_segments].index
@@ -45,7 +44,7 @@ def calculate_genres_weights(genre_counts:pd.DataFrame, scaling_factor:int=1.5) 
     return w_dict
 
 
-def downsample(df:pd.DataFrame, num_segments_per_soundtrack:int=5, percentile:int=80):
+def downsample(df:pd.DataFrame):
     # TODO: commented because first of all we removed half of the segments and the csv do not contain
     # all seguiments for the given game (unmaped ones are ignored)
     # Second because I checked them by hand (4-nin-shougi and zootto-mahjong) and they are a complete
@@ -62,13 +61,6 @@ def downsample(df:pd.DataFrame, num_segments_per_soundtrack:int=5, percentile:in
 
     genre_weights = calculate_genres_weights(genre_counts)
 
-    # TODO: Remove?
-    # Calculates the quantile defined for the number of soundtrack per game
-    # ex: 80% of the soundtracks have s segments
-    # This will be used as our base number to make the downsample. We will modify it with the genre weight
-    #soundtrack_counts = df.groupby("game_id")["soundtrack"].nunique()
-    #sgs_quantile = int(np.percentile(soundtrack_counts.values, percentile))
-
     dfs = []
 
     # Group per game and loop the game groups
@@ -76,6 +68,7 @@ def downsample(df:pd.DataFrame, num_segments_per_soundtrack:int=5, percentile:in
         genre = game_group["genre"].iloc[0]
         genre_weight = genre_weights.get(genre, 1.0)
         n_game_segments = len(game_group)
+
         # The target number of segments we want to get for this game is the number of
         # segments it has times the weight of its genre
         # In the final sommation it will be as if we took the total number of segments of
@@ -86,6 +79,7 @@ def downsample(df:pd.DataFrame, num_segments_per_soundtrack:int=5, percentile:in
         soundtracks = game_group["soundtrack"].unique()
         num_soundtracks = len(soundtracks)
         num_soundtrack_segments = n_game_segments // num_soundtracks
+
         # Granting that there is at least one segment per soundtrack
         num_soundtrack_segments = max(num_soundtrack_segments, 1)
 
@@ -95,6 +89,8 @@ def downsample(df:pd.DataFrame, num_segments_per_soundtrack:int=5, percentile:in
         for soundtrack in soundtracks:
             soundtrack_segments:pd.DataFrame = game_group[game_group["soundtrack"] == soundtrack].sort_values(by="segment")
 
+            # TODO here this soundtrack could have as little as one segment,
+            # so this might be one of the reasons why the distribution is alterated
             if len(soundtrack_segments) <= num_soundtrack_segments:
                 sampled = soundtrack_segments
             else:
@@ -108,7 +104,7 @@ def downsample(df:pd.DataFrame, num_segments_per_soundtrack:int=5, percentile:in
 
             dfs.append(sampled)
 
-    # Junta tudo
+    # Put it all together
     return pd.concat(dfs).reset_index(drop=True)
 
 def main():
