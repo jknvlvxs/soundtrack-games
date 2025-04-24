@@ -62,6 +62,7 @@ def downsample(df:pd.DataFrame):
     genre_weights = calculate_genres_weights(genre_counts)
 
     dfs = []
+    count_less_than_required = 0
 
     # Group per game and loop the game groups
     for game_id, game_group in df.groupby("game_id"):
@@ -94,6 +95,9 @@ def downsample(df:pd.DataFrame):
             # so this might be one of the reasons why the distribution is alterated
             if len(soundtrack_segments) < tgt_soundtrack_segments:
                 sampled = soundtrack_segments
+
+                print(f"For game {game_id}, {soundtrack} has {tgt_soundtrack_segments-len(soundtrack_segments)} less videos than required")
+                count_less_than_required += tgt_soundtrack_segments - len(soundtrack_segments)
             else:
                 # Sum +2 and then ignore the first and second segments sicne they probably are opening or endin screens
                 indices = np.linspace(0, len(soundtrack_segments), tgt_soundtrack_segments +2, dtype=int)
@@ -104,6 +108,11 @@ def downsample(df:pd.DataFrame):
                 sampled = soundtrack_segments.iloc[indices]
 
             dfs.append(sampled)
+
+        print()
+        print()
+
+    print(f"Total less than required {count_less_than_required}")
 
     # Put it all together
     return pd.concat(dfs).reset_index(drop=True)
