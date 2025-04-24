@@ -79,19 +79,28 @@ def plot_group_set(original:GroupSet, train:GroupSet, eval:GroupSet, test:GroupS
     plt.legend()
     plt.show() 
 
+def save_split_txt(split:GroupSet, name:str):
+    games = sorted([game._uid for game in split])
+    games = "\n".join(games)
+
+    with open(f'./splits/{name}.txt', 'w') as f:
+        f.write(games)
+
+    return games
+
 def main():
-    df = pd.read_csv("../load_downsample/videos_info.csv")
-    print(df.groupby(['game_id', 'genre']).count())
+    df = pd.read_csv("../2. downsample/videos_info.csv")
 
     groups = GroupSet.from_df(df, 'game_id', 'genre')
 
-    print(groups)
-
     priority_split = PrioritySplit()
 
-    train, eval, test = priority_split.get_split(groups, [0.8, 0.1, 0.1])
+    splits = priority_split.get_split(groups, [0.8, 0.1, 0.1])
 
-    plot_group_set(groups, train, eval, test)
+    #plot_group_set(groups, train, eval, test)
+
+    for split, name in zip(splits, ['train', 'eval', 'test']):
+        save_split_txt(split, name)
 
 if __name__ == "__main__":
     main()
