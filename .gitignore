@@ -11,6 +11,6 @@
 env/
 test_dataset/
 
-12. Convert to audioset/snes_vmdb
+12. Convert to audioset/audiocraft
 
 *__pycache__

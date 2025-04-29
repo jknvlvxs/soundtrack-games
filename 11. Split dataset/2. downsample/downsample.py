@@ -36,7 +36,7 @@ def calculate_genres_weights(genre_counts:pd.DataFrame, scaling_factor:int=1.5) 
         Retuns:
             a dict in the form {`genre_name`: `genre_w`}
     """
-    uniform_target = int(genre_counts.min() * scaling_factor)
+    uniform_target = int(genre_counts.min() * scaling_factor) # TODO try with scaling_factor = 1
 
     # clip to 1 since we are not performing data augmentation
     w_dict = (uniform_target / genre_counts).clip(upper=1.0).to_dict()

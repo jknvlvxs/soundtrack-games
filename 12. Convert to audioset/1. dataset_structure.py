@@ -1,3 +1,6 @@
+###########################################################################################################
+# To put our dataset in the format https://github.com/facebookresearch/audiocraft/tree/main/dataset/example
+###########################################################################################################
 import os
 import json
 
@@ -8,7 +11,7 @@ import ffmpeg
 SPLIT_TXTS = "../11. Split dataset/3. split/splits"
 VIDEOS_CSV = "../11. Split dataset/2. downsample/videos_info.csv"
 DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/snes-back/vmdb/nintendo-snes-spc"
-CONVERTED_DATASET_PATH = "../12. Convert to audioset/snes_vmdb"
+CONVERTED_DATASET_PATH = "../12. Convert to audioset/audiocraft/dataset/snes_vmdb"
 
 def get_split() -> dict[str, list[str]]:
     split_games = {
@@ -68,7 +71,7 @@ def convert_game(split_path:str, game:str, videos_csv:pd.DataFrame):
 
             # Clearly this is a problem with mapping, because in the game names
             # lufia-ii-rise-of-the-sinistrals-[lufia]
-            # lufia-ii-rise-of-the-sinistrals-[lufia]-1994
+            # lufia-ii-rise-of-the-sinistrals-[lufia]-1994 TODO: throw this game on the trash
             # The dejavu step the both would be changed to 
             # lufia-ii-rise-of-the-sinistrals
             # because there is a .split("[")[0] in mapping.py and drop_database.py
@@ -96,23 +99,24 @@ def convert_game(split_path:str, game:str, videos_csv:pd.DataFrame):
 
         soundtrack_json = {
             "key": "", 
-            "artist": probe['format'].get('tags', {}).get('artist', ''),
-            "sample_rate": probe['streams'][0]['sample_rate'], #TODO we know they are all 44100, but we might want to get this info to make the code more robust
+            "artist": '', #probe['format'].get('tags', {}).get('artist', ''),
+            "sample_rate": probe['streams'][0]['sample_rate'],
             "file_extension": probe['streams'][0]['codec_name'], 
             #"description": this field is now replaced by segments_paths/segments_descriptions
-            "keywords": "", #TODO should we put some stuff here like chiptune, snes? With all saying the same thing might overfit 
-            "duration": probe['streams'][0]['duration'], #TODO ok, we'll need to get the duration anyway 
+            "keywords": "",
+            "duration": probe['streams'][0]['duration'],
             "bpm": "", 
             "genre": "", 
-            "title": probe['format'].get('tags', {}).get('title', ''), 
+            "title": '', #probe['format'].get('tags', {}).get('title', ''),
             "name": soundtrack_tgt_file, 
-            "instrument": "Mix", # TODO should we use mix?
+            "instrument": "",
             "moods": [],
             # New tags that are not part of the MusicGen examples
-            "year": probe['format'].get('tags', {}).get('copyright', ''),
+            "year": '', #probe['format'].get('tags', {}).get('copyright', ''),
             "segments_paths": segments_paths,
             "segments_descriptions": segments_descriptions
         }
+        # TODO check on the paper how this keys of the dictionary are used
 
         with open(soundtrack_json_path, 'w') as f:
             json.dump(soundtrack_json, f, indent=4)
@@ -123,7 +127,7 @@ def main():
 
     # Create folder where the links will go
     if not os.path.exists(CONVERTED_DATASET_PATH):
-        os.mkdir(CONVERTED_DATASET_PATH)
+        os.makedirs(CONVERTED_DATASET_PATH)
 
     # Loop the dataset according to the split
     for split, games in split_dict.items():
