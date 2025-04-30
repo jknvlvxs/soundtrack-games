@@ -16,17 +16,13 @@
 
 import os
 import json
-
-from tqdm import tqdm
-
-CONVERTED_DATASET_PATH = "../12. Convert to audioset/audiocraft/dataset/snes_vmdb"
-MANIFEST_PATH = "../12. Convert to audioset/audiocraft/egs"
+import argparse
 
 def is_mp3(file:str):
     extension = file.split('.')[-1]
     return extension == 'mp3'
 
-def get_manifest_dict(split_path:str) -> list[dict[str, any]]:
+def get_manifest_dict(converted_dataset:str, split_path:str) -> list[dict[str, any]]:
     manifest_jsons = []
 
     for file in sorted(os.listdir(split_path)):
@@ -38,7 +34,7 @@ def get_manifest_dict(split_path:str) -> list[dict[str, any]]:
         with open(file_path, 'r') as f:
             file_dict = json.load(f)
 
-        dataset_name = CONVERTED_DATASET_PATH.split('/')[-1]
+        dataset_name = converted_dataset.split('/')[-1]
         mp3_name = file_dict['name']
         mp3_path = f'dataset/{dataset_name}/{mp3_name}'
 
@@ -62,15 +58,25 @@ def write_jsonl(manifest_jsons:list[dict[str, any]], manifest_path:str):
                 f.write('\n')
 
 def main():
+    # Parse arguments
+    parser = argparse.ArgumentParser(description='2. manifest.py')
+    parser.add_argument('--egs_path', type=str, default="/app/audiocraft/egs", help="path to audiocraft/egs")
+    parser.add_argument('--converted_dataset', type=str, default="/app/audiocraft/dataset", help="path to audiocraft/dataset snes_mvdb will be added to access the converted dataset")
+
+    args = parser.parse_args()
+    egs_path = os.path.join(args.egs_path, 'snes_mvdb')
+    converted_dataset = os.path.join(args.converted_dataset, 'snes_mvdb')
+
     # Loops splits folders
-    for split in sorted(os.listdir(CONVERTED_DATASET_PATH)):
-        split_path = os.path.join(CONVERTED_DATASET_PATH, split)
-        manifest_folder = os.path.join(MANIFEST_PATH, split)
+    for split in sorted(os.listdir(converted_dataset)):
+        split_path = os.path.join(converted_dataset, split)
+        manifest_folder = os.path.join(egs_path, split)
         manifest_path = os.path.join(manifest_folder, 'data.jsonl')
 
-        os.mkdir(manifest_folder)
+        if not os.path.exists(manifest_folder):
+            os.makedirs(manifest_folder)
 
-        manifest_jsons = get_manifest_dict(split_path)
+        manifest_jsons = get_manifest_dict(converted_dataset, split_path)
 
         write_jsonl(manifest_jsons, manifest_path)
 

@@ -3,6 +3,7 @@
 ###########################################################################################################
 import os
 import json
+import argparse
 
 from tqdm import tqdm
 import pandas as pd
@@ -10,8 +11,6 @@ import ffmpeg
 
 SPLIT_TXTS = "../11. Split dataset/3. split/splits"
 VIDEOS_CSV = "../11. Split dataset/2. downsample/videos_info.csv"
-DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/snes-back/vmdb/nintendo-snes-spc"
-CONVERTED_DATASET_PATH = "../12. Convert to audioset/audiocraft/dataset/snes_vmdb"
 
 def get_split() -> dict[str, list[str]]:
     split_games = {
@@ -28,7 +27,7 @@ def get_split() -> dict[str, list[str]]:
 
     return split_games
 
-def convert_game(split_path:str, game:str, videos_csv:pd.DataFrame):
+def convert_game(dataset_root:str, split_path:str, game:str, videos_csv:pd.DataFrame):
     """
         Audiocraft dataset have the format
 
@@ -49,7 +48,7 @@ def convert_game(split_path:str, game:str, videos_csv:pd.DataFrame):
         soundtrack_df = game_df[game_df['soundtrack'] == soundtrack]
 
         # Soundtrack original and target paths
-        soundtrack_orig_path = os.path.join(DATASET_ROOT, game, 'soundtracks', soundtrack+'.mp3')
+        soundtrack_orig_path = os.path.join(dataset_root, game, 'soundtracks', soundtrack+'.mp3')
 
         soundtrack_tgt_file = f"{game}_{soundtrack}.mp3"
         soundtrack_tgt_path= os.path.join(split_path, soundtrack_tgt_file)
@@ -87,8 +86,8 @@ def convert_game(split_path:str, game:str, videos_csv:pd.DataFrame):
             soundtrack, segment = row['soundtrack'], row['segment']
 
             # Oringinal paths
-            segment_orig_path = os.path.join(DATASET_ROOT, game, 'videos', soundtrack, segment)
-            description_orig_path = os.path.join(DATASET_ROOT, game, 'videos_descriptions', segment[:-3]+'txt')
+            segment_orig_path = os.path.join(dataset_root, game, 'videos', soundtrack, segment)
+            description_orig_path = os.path.join(dataset_root, game, 'videos_descriptions', segment[:-3]+'txt')
 
             # Read description
             with open(description_orig_path, 'r') as f:
@@ -122,22 +121,31 @@ def convert_game(split_path:str, game:str, videos_csv:pd.DataFrame):
             json.dump(soundtrack_json, f, indent=4)
 
 def main():
+    # Parse arguments
+    parser = argparse.ArgumentParser(description='1. dataset_structure.py')
+    parser.add_argument('--original_dataset', type=str, default="/app/dataset/nintendo-snes-spc", help="path for the snes mvdb dataset games folder")
+    parser.add_argument('--converted_dataset', type=str, default="/app/audiocraft/dataset", help="path to audiocraft/dataset where the converted dataset will be")
+
+    args = parser.parse_args()
+    original_dataset = args.original_dataset
+    converted_dataset = os.path.join(args.converted_dataset, 'snes_mvdb')
+
     split_dict = get_split()
     segments_df = pd.read_csv(VIDEOS_CSV)
 
     # Create folder where the links will go
-    if not os.path.exists(CONVERTED_DATASET_PATH):
-        os.makedirs(CONVERTED_DATASET_PATH)
+    if not os.path.exists(converted_dataset):
+        os.makedirs(converted_dataset)
 
     # Loop the dataset according to the split
     for split, games in split_dict.items():
-        split_path = os.path.join(CONVERTED_DATASET_PATH, split)
+        split_path = os.path.join(converted_dataset, split)
 
         if not os.path.exists(split_path):
             os.mkdir(split_path)
 
         for game in tqdm(games, desc=split):
-            convert_game(split_path, game, segments_df)
+            convert_game(original_dataset, split_path, game, segments_df)
 
 if __name__ == "__main__":
     main()
