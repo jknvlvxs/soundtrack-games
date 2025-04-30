@@ -99,11 +99,11 @@ def convert_game(dataset_root:str, split_path:str, game:str, videos_csv:pd.DataF
         soundtrack_json = {
             "key": "", 
             "artist": '', #probe['format'].get('tags', {}).get('artist', ''),
-            "sample_rate": probe['streams'][0]['sample_rate'],
+            "sample_rate": int(probe['streams'][0]['sample_rate']),
             "file_extension": probe['streams'][0]['codec_name'], 
             #"description": this field is now replaced by segments_paths/segments_descriptions
             "keywords": "",
-            "duration": probe['streams'][0]['duration'],
+            "duration": float(probe['streams'][0]['duration']),
             "bpm": "", 
             "genre": "", 
             "title": '', #probe['format'].get('tags', {}).get('title', ''),
