@@ -37,7 +37,9 @@ def get_manifest_dict(converted_dataset:str, split_path:str) -> list[dict[str, a
 
         dataset_name = converted_dataset.split('/')[-1]
         mp3_name = file_dict['name']
-        mp3_path = f'dataset/{dataset_name}/{mp3_name}'
+        split = split_path.split('/')[-1]
+
+        mp3_path = f'dataset/{dataset_name}/{split}/{mp3_name}'
 
         segments_paths = file_dict['segments_paths']
 
