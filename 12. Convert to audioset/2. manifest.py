@@ -4,6 +4,7 @@
 #  Jsonl file with jsons following the format
 # example = {
 #     "path": "dataset/example/electro_2.mp3",
+#     "meta_index": 0, -> we added this one to refer to the multiple metadata an audio can have in our dataset
 #     "duration": 20.035918367346937, 
 #     "sample_rate": 44100, 
 #     "amplitude": None, 
@@ -38,16 +39,20 @@ def get_manifest_dict(converted_dataset:str, split_path:str) -> list[dict[str, a
         mp3_name = file_dict['name']
         mp3_path = f'dataset/{dataset_name}/{mp3_name}'
 
-        manifest_json = {
-            "path": mp3_path,
-            "duration": file_dict['duration'],
-            "sample_rate": file_dict['sample_rate'],
-            "amplitude": None,
-            "weight": None,
-            "info_path": None
-        }
+        segments_paths = file_dict['segments_paths']
 
-        manifest_jsons.append(manifest_json)
+        for idx, _ in enumerate(segments_paths):
+            manifest_json = {
+                "path": mp3_path,
+                "meta_index": idx,
+                "duration": file_dict['duration'],
+                "sample_rate": file_dict['sample_rate'],
+                "amplitude": None,
+                "weight": None,
+                "info_path": None
+            }
+
+            manifest_jsons.append(manifest_json)
 
     return manifest_jsons
 
