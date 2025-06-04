@@ -44,8 +44,8 @@ def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd
         The audio will be the soundtrack.
         The json will acctually be many, one for each of the soundtrack's video. It will contain the
         video description the path to the corresponding soundtrack and the path to the segment's mp4.
-        This will guarantee that the only adaptations needed on the AudioCraft code will happen on the
-        AudioDataset from_meta method, letting the rest of the code hopefully the same.
+        This will minimize the amount of adaptations on the AudioCraft code, including no change in
+        how samples are drawn from the dataset.
 
         We'll use videos_csv to get the selected segments and create links for the soundtracks
         instead of copying the whole audio.
@@ -95,7 +95,7 @@ def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd
 
         # Read description
         with open(description_orig_path, 'r') as f:
-            description = f.read()
+            description = f.read().rstrip("\n")
 
         soundtrack_json = {
             "key": "", 

@@ -1,10 +1,10 @@
 ####################################################################################################################################################################
 # To create the jsonl manifest file referencing the dataset's audios as in https://github.com/facebookresearch/audiocraft/blob/main/egs/example/data.jsonl
 #
-#  Jsonl file with jsons following the format
+# Jsonl file with jsons following the format
 # example = {
 #     "path": "dataset/example/electro_2.mp3",
-#     "meta_index": 0, -> we added this one to refer to the multiple metadata an audio can have in our dataset
+#     "json_path": "dataset/example/electro_2_json_0.mp3", -> we added this one to refer to the multiple metadata an audio can have in our dataset
 #     "duration": 20.035918367346937, 
 #     "sample_rate": 44100, 
 #     "amplitude": None, 
@@ -35,26 +35,20 @@ def get_manifest_dict(converted_dataset:str, split_path:str) -> list[dict[str, a
         with open(file_path, 'r') as f:
             file_dict = json.load(f)
 
-        dataset_name = converted_dataset.split('/')[-1]
         mp3_name = file_dict['name']
-        split = split_path.split('/')[-1]
+        mp3_path = os.path.join(split_path, mp3_name)
 
-        mp3_path = f'dataset/{dataset_name}/{split}/{mp3_name}'
+        manifest_json = {
+            "path": mp3_path,
+            "json_path": file_path,
+            "duration": file_dict['duration'],
+            "sample_rate": file_dict['sample_rate'],
+            "amplitude": None,
+            "weight": None,
+            "info_path": None
+        }
 
-        segments_paths = file_dict['segments_paths']
-
-        for idx, _ in enumerate(segments_paths):
-            manifest_json = {
-                "path": mp3_path,
-                "meta_index": idx,
-                "duration": file_dict['duration'],
-                "sample_rate": file_dict['sample_rate'],
-                "amplitude": None,
-                "weight": None,
-                "info_path": None
-            }
-
-            manifest_jsons.append(manifest_json)
+        manifest_jsons.append(manifest_json)
 
     return manifest_jsons
 
@@ -67,8 +61,8 @@ def write_jsonl(manifest_jsons:list[dict[str, any]], manifest_path:str):
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='2. manifest.py')
-    parser.add_argument('--egs_path', type=str, default="/app/audiocraft/egs", help="path to audiocraft/egs")
-    parser.add_argument('--converted_dataset', type=str, default="/app/audiocraft/dataset", help="path to audiocraft/dataset snes_mvdb will be added to access the converted dataset")
+    parser.add_argument('--egs_path', type=str, default="/app/code/egs", help="path to audiocraft/egs")
+    parser.add_argument('--converted_dataset', type=str, default="/app/code/dataset", help="path to audiocraft/dataset. snes_mvdb will be added to access the converted dataset")
 
     args = parser.parse_args()
     egs_path = os.path.join(args.egs_path, 'snes_mvdb')
