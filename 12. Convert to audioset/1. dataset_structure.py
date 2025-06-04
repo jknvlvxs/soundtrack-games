@@ -27,7 +27,13 @@ def get_split() -> dict[str, list[str]]:
 
     return split_games
 
-def convert_game(dataset_root:str, split_path:str, game:str, videos_csv:pd.DataFrame):
+def get_sdtk_to_vid_map():
+    """
+        Returns:
+        A dict in the format {soundtrack_01: [vid_1, vid_2, vid_3]} 
+    """
+
+def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd.DataFrame):
     """
         Audiocraft dataset have the format
 
@@ -35,76 +41,71 @@ def convert_game(dataset_root:str, split_path:str, game:str, videos_csv:pd.DataF
                 |_audio_001.mp3
                 |_audio_001.json
 
-        The audio will be the game soundtrack. The json will contain the videos descriptions of
-        video segments mapped to the corresponding soundtrack and the path to the segment's mp4.
+        The audio will be the soundtrack.
+        The json will acctually be many, one for each of the soundtrack's video. It will contain the
+        video description the path to the corresponding soundtrack and the path to the segment's mp4.
+        This will guarantee that the only adaptations needed on the AudioCraft code will happen on the
+        AudioDataset from_meta method, letting the rest of the code hopefully the same.
 
         We'll use videos_csv to get the selected segments and create links for the soundtracks
         instead of copying the whole audio.
     """
-    game_df = videos_csv[videos_csv["game_id"] == game]
-    game_soundtracks:list[str] = game_df["soundtrack"].unique()
+    soundtrack = soundtrack_df['soundtrack'].iloc[0]
+    game = soundtrack_df['game_id'].iloc[0]
 
-    for soundtrack in game_soundtracks:
-        soundtrack_df = game_df[game_df['soundtrack'] == soundtrack]
+    # Try to get soundtrack meta
+    soundtrack_orig_path = os.path.join(dataset_root, game, 'soundtracks', soundtrack+'.mp3')
 
-        # Soundtrack original and target paths
-        soundtrack_orig_path = os.path.join(dataset_root, game, 'soundtracks', soundtrack+'.mp3')
+    try:
+        probe:dict = ffmpeg.probe(soundtrack_orig_path)
+    except Exception as e:
+        print(f"Erro in ffmpeg.prob for game {game} in {soundtrack}")
+        return
+        # TODO the soundtracks that failed probe simply do not exist:
+        # lufia-ii-rise-of-the-sinistrals-[lufia]-1994 in soundtrack_0059
+        # lufia-ii-rise-of-the-sinistrals-[lufia]-1994 in soundtrack_0060
+        # lufia-ii-rise-of-the-sinistrals-[lufia]-1994 in soundtrack_0062
 
-        soundtrack_tgt_file = f"{game}_{soundtrack}.mp3"
-        soundtrack_tgt_path= os.path.join(split_path, soundtrack_tgt_file)
-        soundtrack_json_path = soundtrack_tgt_path[:-3]+'json'
+        # Clearly this is a problem with mapping, because in the game names
+        # lufia-ii-rise-of-the-sinistrals-[lufia]
+        # lufia-ii-rise-of-the-sinistrals-[lufia]-1994 TODO: throw this game on the trash
+        # After the dejavu step the both would be changed to 
+        # lufia-ii-rise-of-the-sinistrals
+        # because there is a .split("[")[0] in mapping.py and drop_database.py
 
-        if os.path.exists(soundtrack_tgt_path) and os.path.exists(soundtrack_json_path):
+    # Create link for the soundtrack in the converted dataset
+    soundtrack_tgt_file = f"{game}_{soundtrack}.mp3"
+    soundtrack_tgt_path= os.path.join(split_path, soundtrack_tgt_file)
+
+    if not os.path.exists(soundtrack_tgt_path):
+        os.symlink(soundtrack_orig_path, soundtrack_tgt_path)
+
+    # Loop soundtrack videos to create a json into audiocraft/dataset
+    for idx, row in enumerate(soundtrack_df.iterrows()):
+        _, row = row
+        soundtrack, segment = row['soundtrack'], row['segment']
+        soundtrack_json_path = soundtrack_tgt_path[:-4]+ '_json_{0:04d}'.format(idx) +'.json'
+
+        if os.path.exists(soundtrack_json_path):
             continue
 
-        # Get soundctrack meta
-        try:
-            probe:dict = ffmpeg.probe(soundtrack_orig_path)
-        except Exception as e:
-            print(f"Erro in ffmpeg.prob for game {game} in {soundtrack}")
-            continue
-            # TODO the soundtracks that failed probe simply do not exist:
-            # lufia-ii-rise-of-the-sinistrals-[lufia]-1994 in soundtrack_0059
-            # lufia-ii-rise-of-the-sinistrals-[lufia]-1994 in soundtrack_0060
-            # lufia-ii-rise-of-the-sinistrals-[lufia]-1994 in soundtrack_0062
+        # Oringinal paths
+        segment_orig_path = os.path.join(dataset_root, game, 'videos', soundtrack, segment)
+        description_orig_path = os.path.join(dataset_root, game, 'videos_descriptions', segment[:-3]+'txt')
 
-            # Clearly this is a problem with mapping, because in the game names
-            # lufia-ii-rise-of-the-sinistrals-[lufia]
-            # lufia-ii-rise-of-the-sinistrals-[lufia]-1994 TODO: throw this game on the trash
-            # The dejavu step the both would be changed to 
-            # lufia-ii-rise-of-the-sinistrals
-            # because there is a .split("[")[0] in mapping.py and drop_database.py
-
-        # Create link for the soundtrack in the converted dataset
-        if not os.path.exists(soundtrack_tgt_path): # because the link can exist w/o the json
-            os.symlink(soundtrack_orig_path, soundtrack_tgt_path)
-
-        # Loop soundtrack seguiments to get all the descriptions and mp4 paths
-        segments_paths = []
-        segments_descriptions = []
-        for _, row in soundtrack_df.iterrows():
-            soundtrack, segment = row['soundtrack'], row['segment']
-
-            # Oringinal paths
-            segment_orig_path = os.path.join(dataset_root, game, 'videos', soundtrack, segment)
-            description_orig_path = os.path.join(dataset_root, game, 'videos_descriptions', segment[:-3]+'txt')
-
-            # Read description
-            with open(description_orig_path, 'r') as f:
-                description = f.read()
-
-            segments_paths.append(segment_orig_path)
-            segments_descriptions.append(description)
+        # Read description
+        with open(description_orig_path, 'r') as f:
+            description = f.read()
 
         soundtrack_json = {
             "key": "", 
             "artist": '', #probe['format'].get('tags', {}).get('artist', ''),
             "sample_rate": int(probe['streams'][0]['sample_rate']),
             "file_extension": probe['streams'][0]['codec_name'], 
-            #"description": this field is now replaced by segments_paths/segments_descriptions
+            "description": description,
             "keywords": "",
             "duration": float(probe['streams'][0]['duration']),
-            "bpm": "", 
+            "bpm": "",
             "genre": "", 
             "title": '', #probe['format'].get('tags', {}).get('title', ''),
             "name": soundtrack_tgt_file, 
@@ -112,8 +113,8 @@ def convert_game(dataset_root:str, split_path:str, game:str, videos_csv:pd.DataF
             "moods": [],
             # New tags that are not part of the MusicGen examples
             "year": '', #probe['format'].get('tags', {}).get('copyright', ''),
-            "segments_paths": segments_paths,
-            "segments_descriptions": segments_descriptions
+            "video": segment_orig_path,
+            "json_idx": idx
         }
         # TODO check on the paper how this keys of the dictionary are used
 
@@ -124,7 +125,7 @@ def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='1. dataset_structure.py')
     parser.add_argument('--original_dataset', type=str, default="/app/dataset/nintendo-snes-spc", help="path for the snes mvdb dataset games folder")
-    parser.add_argument('--converted_dataset', type=str, default="/app/audiocraft/dataset", help="path to audiocraft/dataset where the converted dataset will be")
+    parser.add_argument('--converted_dataset', type=str, default="/app/code/dataset", help="path to audiocraft/dataset where the converted dataset will be")
 
     args = parser.parse_args()
     original_dataset = args.original_dataset
@@ -145,7 +146,13 @@ def main():
             os.mkdir(split_path)
 
         for game in tqdm(games, desc=split):
-            convert_game(original_dataset, split_path, game, segments_df)
+            game_df = segments_df[segments_df["game_id"] == game]
+            game_soundtracks = game_df["soundtrack"].unique()
+
+            for soundtrack in game_soundtracks:
+                soundtrack_df = game_df[game_df['soundtrack'] == soundtrack]
+
+                convert_soundtrack_videos(original_dataset, split_path, soundtrack_df)
 
 if __name__ == "__main__":
     main()
