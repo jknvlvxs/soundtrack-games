@@ -27,12 +27,6 @@ def get_split() -> dict[str, list[str]]:
 
     return split_games
 
-def get_sdtk_to_vid_map():
-    """
-        Returns:
-        A dict in the format {soundtrack_01: [vid_1, vid_2, vid_3]} 
-    """
-
 def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd.DataFrame):
     """
         Audiocraft dataset have the format
