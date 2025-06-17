@@ -121,6 +121,27 @@ DEFAULT_AMP_MIN = 7
 PEAK_NEIGHBORHOOD_SIZE = 7  # 20 was the original value.
 ```
 
+### Selecting Dejavu Confidence
+First we used `get_games_with_lowest_confidence.py` to get the games with the lowest input and fingerprinted confidences. This is done by averaging those mestrics across all videos of the game, than suming the results of both and getting the games with the lowest values. Fingerprinted confidence mean is multiplied by 10 since its values are usually much smalled than the input confidence ones.
+
+Top 10 games with lower confidence, by the above calculation, were:
+1. cute-angela-great-journey
+2. honkakuha-taikyoku-shougi-shougi-club
+3. frognes
+4. classic-road
+5. john-madden-football-93-1992
+6. hungry-dinosaurs
+7. cyber-knight-ii-chikyuu-teikoku-no-yabou
+8. james-pond-3-operation-starfish
+9. international-superstar-soccer
+10. international-superstar-soccer-deluxe
+
+Unsurprisingly, the top 4 games of the list above had to be **removed from the dataset**, beucause on all of them there wasn't a single correct match.
+
+Than, we manually annotate 100 videos in `videos_gt.json`. To choose the videos, we follow the list of games with lower confidence. For each game we order it's videos by confidence values, obtained by summing `input_confidence + 10*fingerprinted_confidence`. This is done in `get_ordered_videos_by_confidence.py`. From this list, we manually go from the lower confidence to the higher one until we find the first example FE were Dejavu's match is right. We annotate the 5 examples below FE and the 5 examples from FE up. If the first example is right already, then we would only anotate 5 examples, that is, the 5 from FE up. We repeat this for each game until we reach 100 annotated examples. This was done in order to obtain the lower input and fingerprinted confidences from which Dejavu's matches start to get accurate.
+
+Finally, we use `grid_search_confidence.py` to run a grid search that aims at maximizing the accuracy of Dejavu matches by setting a threshold on input and fingerprinted confidences metrics, taking as groundtruth the annotations at `videos_gt.json`. Examples with values below such thresholds will be "discarted", as they are probably videos with no music at all.
+
 ## Games genres
 
 Generates deepseek_genres.csv to the next step

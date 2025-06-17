@@ -12,5 +12,6 @@ env/
 test_dataset/
 
 12. Convert to audioset/audiocraft
+06. Audio fingerprinting/select_confidence/videos_gt_old.json
 
 *__pycache__
