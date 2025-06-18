@@ -45,8 +45,8 @@ def run_with_confidence(videos_gt_dict, in_conf, finger_conf) -> tuple[int, int,
         dejavu_csv_path = os.path.join(DATASET_ROOT, game, "mapping_log.csv")
         dejavu_df = pd.read_csv(dejavu_csv_path)
 
-        mp4s = videos_gt_dict[game]["mp4"]
-        gt_clss = videos_gt_dict[game]["class"]
+        mp4s = videos_gt_dict[game]["video"]
+        gt_clss = videos_gt_dict[game]["sdtk"]
 
         game_count = 0
         game_correct = 0
