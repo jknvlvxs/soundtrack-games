@@ -5,10 +5,12 @@ import pandas as pd
 
 DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/snes-back/vmdb/nintendo-snes-spc" 
 
-GAME = "aladdin"
+GAME = "go-go-ackman"
 
 IN_CONF = "input_confidence"
 FINGER_CONF = "fingerprinted_confidence"
+
+SKIP = 0
 
 def main():
     game_folder = os.path.join(DATASET_ROOT, GAME)
@@ -28,7 +30,7 @@ def main():
         _, video_row = row
         video, soundtrack, input_confidence, fingerprinted_confidence, confidence_sum = video_row
 
-        if soundtrack == 0:
+        if soundtrack == 0 or idx < SKIP:
             continue
 
         video_path = os.path.join(game_folder, 'videos', soundtrack, video)
