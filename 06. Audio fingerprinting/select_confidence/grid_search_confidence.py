@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from tqdm import tqdm
 
-DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/snes-mock" 
+DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/snes-back/vmdb/nintendo-snes-spc" 
 VIDEOS_GT_JSON = "./videos_gt.json" # ground truth
 
 IN_CONF = "input_confidence"
@@ -91,7 +91,7 @@ def main():
         current_in_conf, current_finger_conf = round(current_in_conf, 2), round(current_finger_conf, 2)
 
         # Run with current_step for every game
-        total_count, correct_count, lost_count = run_with_confidence(videos_gt_dict, current_in_conf, current_finger_conf )
+        total_count, correct_count, lost_count = run_with_confidence(videos_gt_dict, current_in_conf, current_finger_conf)
 
         acc = round(correct_count / total_count, 2)
         lost_percentage = round(lost_count / total_count, 2)
