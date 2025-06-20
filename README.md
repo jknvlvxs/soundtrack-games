@@ -146,6 +146,8 @@ As an empirical proof on how much this method of annotation works, in the game A
 
 Finally, we use `grid_search_confidence.py` to run a grid search that aims at maximizing the accuracy of Dejavu matches by setting a threshold on input and fingerprinted confidences metrics, taking as groundtruth the annotations at `videos_gt.json`. Examples with values below such thresholds will be "discarted", as they are probably videos with no music at all.
 
+Results show that `input_confidence=0.0` and `fingerprinted_confidence=0.01` yield the best accuracy on the annotated data, of 83%, while loosing 16% of the videos.
+
 ## Games genres
 
 Generates deepseek_genres.csv to the next step
