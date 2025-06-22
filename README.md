@@ -148,6 +148,16 @@ Finally, we use `grid_search_confidence.py` to run a grid search that aims at ma
 
 Results show that `input_confidence=0.0` and `fingerprinted_confidence=0.01` yield the best accuracy on the annotated data, of 83%, while loosing 16% of the videos.
 
+### Move Unmpaed Soundtracks and Videos
+We run `move_unmaped_after_dejavu.py` to move all the following files:
+
+* soundtracks smaller than 8 seconds
+* videos smaller than 10 seconds (9 seconds in practice because many videos have nine dot something seconds)
+* sounstracks with no corresponding videos
+* videos with no corresponding soundtracks
+
+to a separated folder, a "parallel" dataset with data that is not useful for our training purposes. One can run the TODO script to merge both of this datasets.
+
 ## Games genres
 
 Generates deepseek_genres.csv to the next step
