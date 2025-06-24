@@ -3,7 +3,7 @@ import ffmpeg
 import pandas as pd
 from tqdm import tqdm
 
-DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/snes-back/vmdb/nintendo-snes-spc"
+DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/snes-mock"
 UNMAPPED_DATSET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/snes-mock-unmapped"
 
 MIN_SOUNDTRACK_SIZE = 8
@@ -11,6 +11,30 @@ MIN_VIDEO_SIZE = 10 - 1 # -1 is a tolerance because many gameplay slices have ni
 
 DRY_RUN = True
 VERBOSE = False
+
+def move_videos_out(video_sdtk_path:str):
+    """
+        When a soundtrack is smaller than MIN_SOUNDTRACK_SIZE, it will be treated as unmapped
+        therefore we need to mode the videos mapped to it, if any, to the game/videos folder,
+        that is, ou of the game/videos/sountrack folder
+
+        Args:
+            video_sdtk_path: path to the game/videos/sountrack folder
+    """
+    if os.path.exists(video_sdtk_path):
+        dir_list = os.listdir(video_sdtk_path)
+
+        if len(dir_list) > 0:
+            videos_folder_path = os.path.abspath(os.path.join(video_sdtk_path, os.pardir)) # game/videos
+
+            for video in dir_list:
+                current_vid_path = os.path.join(video_sdtk_path, video)
+                tgt_vid_pathj = os.path.join(videos_folder_path, video)
+
+                os.rename(current_vid_path, tgt_vid_pathj)
+
+            os.rmdir(video_sdtk_path)
+            if VERBOSE: tqdm.write(f"Video folder {video_sdtk_path} was EMPTY, so it was REMOVED")
 
 def get_sdtks_to_unmap(soundtracks_path:str, videos_path:str):
     """
@@ -44,7 +68,7 @@ def get_sdtks_to_unmap(soundtracks_path:str, videos_path:str):
                     if VERBOSE: tqdm.write(f"Video folder {video_folder_path} is EMPTY")
                 else:
                     os.rmdir(video_folder_path)
-                    tqdm.write(f"Video folder {video_folder_path} was EMPTY, so it was REMOVED")
+                    if VERBOSE: tqdm.write(f"Video folder {video_folder_path} was EMPTY, so it was REMOVED")
 
     # For each soundtrack
     for soundtrack_file in sorted(os.listdir(soundtracks_path)):
@@ -58,26 +82,25 @@ def get_sdtks_to_unmap(soundtracks_path:str, videos_path:str):
         # A soundtrack might not even have a folder at the videos folder,
         # so we still need to check if it isn't in the mapped_sdtks
         if soundtrack_path not in mapped_sdtks:
-            #tqdm.write(f"Soundtrack {soundtrack_path} wasn't mapped to any video")
             count_unmapped += 1
             unmapped_sdtks.append(soundtrack_path)
             continue
 
         # If audio smaller than MIN_SOUNDTRACK_SIZE
-        try:
-            probe = ffmpeg.probe(soundtrack_path)
-            sdtk_duration = float(probe['format']['duration'])
+        probe = ffmpeg.probe(soundtrack_path)
+        sdtk_duration = float(probe['format']['duration'])
 
-            if sdtk_duration < MIN_SOUNDTRACK_SIZE:
-                count_unmapped += 1
-                # tqdm.write(f"Soundtrack {soundtrack_file}:\nprobe:{sdtk_duration}\n")
-                unmapped_sdtks.append(soundtrack_path)
-        except Exception as e:
-            tqdm.write(f"Error on probing {soundtrack_path}: {e}")
+        if sdtk_duration < MIN_SOUNDTRACK_SIZE:
+            count_unmapped += 1
+            unmapped_sdtks.append(soundtrack_path)
+
+            # Move all videos corresponding to that soundtrack out of the game/videos/soundtrack folder
+            video_sdtk_path = os.path.join(videos_path, soundtrack_file.split('.')[0])
+            if not DRY_RUN: move_videos_out(video_sdtk_path)
 
     return unmapped_sdtks, count_unmapped, count_total
 
-def get_videos_to_unmap(videos_path):
+def get_videos_to_unmap(videos_path, unmapped_sdtks):
     """
         To get the videos outside any soundtrack folder or with duration smaller than MIN_VIDEO_SIZE
     """
@@ -89,7 +112,6 @@ def get_videos_to_unmap(videos_path):
         video_or_folder_path = os.path.join(videos_path, vid_or_folder)
 
         if not os.path.isdir(video_or_folder_path):
-            #tqdm.write(f"Video {video_or_folder_path} is unmapped")
             count_total += 1
             count_unmapped += 1
             unmapped_videos.append(video_or_folder_path)
@@ -100,18 +122,20 @@ def get_videos_to_unmap(videos_path):
         for video_file in os.listdir(folder_path):
             count_total += 1
 
-            video_file_path = os.path.join(folder_path, video_file)
-            try:
-                probe = ffmpeg.probe(video_file_path)
-                video_duration = float(probe['format']['duration'])
-
-                if video_duration < MIN_VIDEO_SIZE:
+            # Since DRY_RUN will not execute move_videos_out
+            if DRY_RUN:
+                soundtrack_path = os.path.abspath(os.path.join(videos_path, os.pardir, 'soundtracks', vid_or_folder+'.mp3'))
+                if soundtrack_path in unmapped_sdtks:
                     count_unmapped += 1
-                    #tqdm.write(f"Video {video_file_path}:\nprobe:{video_duration}\n")
-                    unmapped_videos.append(video_file_path)
 
-            except Exception as e:
-                tqdm.write(f"Error on probing {unmapped_videos}: {e}")
+            video_file_path = os.path.join(folder_path, video_file)
+
+            probe = ffmpeg.probe(video_file_path)
+            video_duration = float(probe['format']['duration'])
+
+            if video_duration < MIN_VIDEO_SIZE:
+                count_unmapped += 1
+                unmapped_videos.append(video_file_path)
 
     return unmapped_videos, count_unmapped, count_total
 
@@ -126,7 +150,7 @@ def move_unmapped_soundtracks(unmapped_sdtks:list[str]) -> list[str]:
 
     for unmapped_sdtk in unmapped_sdtks:
         if not os.path.exists(unmapped_sdtk):
-            print("move_unmapped_soundtracks: Skipping:", unmapped_sdtk)
+            if VERBOSE: print("move_unmapped_soundtracks: Skipping:", unmapped_sdtk)
             continue
 
         splited_sdtk = unmapped_sdtk.split("/")
@@ -164,7 +188,7 @@ def move_unmapped_videos(unmapped_videos:list[str]) -> tuple[list[str], list[str
 
     for unmapped_video in unmapped_videos:
         if not os.path.exists(unmapped_video):
-            print("move_unmapped_soundtracks: Skipping:", unmapped_video)
+            if VERBOSE: print("move_unmapped_soundtracks: Skipping:", unmapped_video)
             continue
 
         splited_video = unmapped_video.split("/")
@@ -207,18 +231,17 @@ def move_unmapped_videos(unmapped_videos:list[str]) -> tuple[list[str], list[str
         mapping_dest_path = os.path.join(UNMAPPED_DATSET_ROOT, game, mapping_file)
 
         mapping_df = pd.read_csv(mapping_orig_path)
-
         mapping_df_entry = mapping_df[mapping_df['video'] == video_file]
 
         mapping_df = mapping_df.drop(mapping_df_entry.index)
-        mapping_df.to_csv(mapping_orig_path)
+        mapping_df.to_csv(mapping_orig_path, index=False)
 
         if not os.path.exists(mapping_dest_path):
-            mapping_df_entry.to_csv(mapping_dest_path)
+            mapping_df_entry.to_csv(mapping_dest_path, index=False)
         else:
             dest_mapping_df = pd.read_csv(mapping_dest_path)
             dest_mapping_df = pd.concat([dest_mapping_df, mapping_df_entry], ignore_index=True)
-            dest_mapping_df.to_csv(mapping_dest_path)
+            dest_mapping_df.to_csv(mapping_dest_path, index=False)
 
         # Check for empty csv files
         if mapping_df.empty:
@@ -262,7 +285,7 @@ def main(base_dir):
 
         # Get Videos
         if os.path.isdir(videos_path):
-            unmapped_videos, cnt_ump_v, cnt_total_v = get_videos_to_unmap(videos_path)
+            unmapped_videos, cnt_ump_v, cnt_total_v = get_videos_to_unmap(videos_path, unmapped_sdtks)
 
             if cnt_ump_v == cnt_total_v:
                 tqdm.write(f"################ GAME {game} HAVE NO MAPPED VIDEOS {cnt_ump_v} unmapped ###################")
@@ -273,8 +296,9 @@ def main(base_dir):
     print(f"{gb_cnt_ump_s} audios of {gb_cnt_total_s}, or {(gb_cnt_ump_s/gb_cnt_total_s)*100}% of the audios, will be UNMAPPED")
     print(f"{gb_cnt_ump_v} videos of {gb_cnt_total_v}, or {(gb_cnt_ump_v/gb_cnt_total_v)*100}% of the videos, will be UNMAPPED")
 
-    move_unmapped_soundtracks(unmapped_sdtks)
-    move_unmapped_videos(unmapped_videos)
+    if not DRY_RUN:
+        move_unmapped_soundtracks(unmapped_sdtks)
+        move_unmapped_videos(unmapped_videos)
 
 if __name__ == "__main__":
     if not os.path.exists(UNMAPPED_DATSET_ROOT):
