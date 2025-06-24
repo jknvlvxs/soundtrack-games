@@ -281,6 +281,10 @@ def main(base_dir):
 
             if cnt_ump_s == cnt_total_s:
                 tqdm.write(f"################ GAME {game} HAVE NO MAPPED SOUNTRACKS {cnt_ump_s} unmapped ###################")
+                if not DRY_RUN:
+                    tqdm.write("################ MOVING THE WHOLE GAME ###################\n")
+                    tgt_game_path = os.path.join(UNMAPPED_DATSET_ROOT, game)
+                    os.rename(game_path, tgt_game_path)
 
             gb_cnt_ump_s += cnt_ump_s
             gb_cnt_total_s += cnt_total_s
@@ -290,7 +294,7 @@ def main(base_dir):
             unmapped_videos, cnt_ump_v, cnt_total_v = get_videos_to_unmap(videos_path, unmapped_sdtks)
 
             if cnt_ump_v == cnt_total_v:
-                tqdm.write(f"################ GAME {game} HAVE NO MAPPED VIDEOS {cnt_ump_v} unmapped ###################")
+                tqdm.write(f"################ GAME {game} HAVE NO MAPPED VIDEOS {cnt_ump_v} unmapped ###################\n")
 
             gb_cnt_ump_v += cnt_ump_v
             gb_cnt_total_v += cnt_total_v
