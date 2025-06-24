@@ -101,12 +101,13 @@ def get_sdtks_to_unmap(soundtracks_path:str, videos_path:str):
 
     return unmapped_sdtks, count_unmapped, count_total
 
-def get_videos_to_unmap(videos_path, unmapped_sdtks):
+def get_videos_to_unmap(videos_path:str, unmapped_sdtks:list[str]):
     """
         To get the videos outside any soundtrack folder or with duration smaller than MIN_VIDEO_SIZE
     """
     count_total = 0
     count_unmapped = 0
+    cnt_ump_s = 0
     unmapped_videos:list[str] = []
 
     for vid_or_folder in sorted(os.listdir(videos_path)): # game/videos
@@ -137,9 +138,23 @@ def get_videos_to_unmap(videos_path, unmapped_sdtks):
 
             if video_duration < MIN_VIDEO_SIZE:
                 count_unmapped += 1
-                unmapped_videos.append(video_file_path)
 
-    return unmapped_videos, count_unmapped, count_total
+                # Move video out the soundtrack path
+                tgt_video_file_path = os.path.join(videos_path, video_file)
+                if not DRY_RUN:
+                    os.rename(video_file_path, tgt_video_file_path)
+
+                    if len(os.listdir(folder_path)) == 0:
+                        cnt_ump_s += 1
+                        os.rmdir(folder_path)
+
+                        sdtk_path = os.path.abspath(os.path.join(videos_path, os.pardir))
+                        sdtk_path = os.path.join(sdtk_path, 'soundtracks', vid_or_folder+'.mp3')
+                        unmapped_sdtks.append(sdtk_path)
+
+                unmapped_videos.append(tgt_video_file_path)
+
+    return unmapped_videos, unmapped_sdtks, count_unmapped, count_total, cnt_ump_s
 
 def move_unmapped_soundtracks(unmapped_sdtks:list[str]):
     """
@@ -229,6 +244,9 @@ def main(base_dir):
         # Get Soundtracks
         unmapped_sdtks, cnt_ump_s, cnt_total_s = get_sdtks_to_unmap(soundtracks_path, videos_path)
 
+        gb_cnt_ump_s += cnt_ump_s
+        gb_cnt_total_s += cnt_total_s
+
         if cnt_ump_s == cnt_total_s:
             tqdm.write(f"################ GAME {game} HAVE NO MAPPED SOUNTRACKS {cnt_ump_s} unmapped ###################")
 
@@ -239,17 +257,23 @@ def main(base_dir):
                 unmapped_games.append(game)
                 continue
 
-        gb_cnt_ump_s += cnt_ump_s
-        gb_cnt_total_s += cnt_total_s
-
         # Get Videos
-        unmapped_videos, cnt_ump_v, cnt_total_v = get_videos_to_unmap(videos_path, unmapped_sdtks)
+        unmapped_videos, unmapped_sdtks, cnt_ump_v, cnt_total_v, cnt_ump_s = get_videos_to_unmap(videos_path, unmapped_sdtks)
+
+        gb_cnt_ump_v += cnt_ump_v
+        gb_cnt_total_v += cnt_total_v
+
+        gb_cnt_ump_s += cnt_ump_s
 
         if cnt_ump_v == cnt_total_v:
             tqdm.write(f"################ GAME {game} HAVE NO MAPPED VIDEOS {cnt_ump_v} unmapped ###################\n")
 
-        gb_cnt_ump_v += cnt_ump_v
-        gb_cnt_total_v += cnt_total_v
+            if not DRY_RUN:
+                tqdm.write(f"################ MOVING THE WHOLE GAME {game} ###################\n") # belive me, this case exists
+                tgt_game_path = os.path.join(UNMAPPED_DATSET_ROOT, game)
+                os.rename(game_path, tgt_game_path)
+                unmapped_games.append(game)
+                continue
 
         # Unmap soundtracks and videos
         if not DRY_RUN:
