@@ -152,7 +152,7 @@ def move_unmapped_soundtracks(unmapped_sdtks:list[str]) -> list[str]:
 
     for unmapped_sdtk in unmapped_sdtks:
         if not os.path.exists(unmapped_sdtk):
-            if VERBOSE: print("move_unmapped_soundtracks: Skipping:", unmapped_sdtk)
+            if VERBOSE: tqdm.write(f"move_unmapped_soundtracks: Skipping: {unmapped_sdtk}")
             continue
 
         splited_sdtk = unmapped_sdtk.split("/")
@@ -190,7 +190,7 @@ def move_unmapped_videos(unmapped_videos:list[str]) -> tuple[list[str], list[str
 
     for unmapped_video in unmapped_videos:
         if not os.path.exists(unmapped_video):
-            if VERBOSE: print("move_unmapped_videos: Skipping:", unmapped_video)
+            if VERBOSE: tqdm.write(f"move_unmapped_videos: Skipping: {unmapped_video}")
             continue
 
         splited_video = unmapped_video.split("/")
