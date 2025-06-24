@@ -15,7 +15,7 @@ VERBOSE = True
 def move_videos_out(video_sdtk_path:str):
     """
         When a soundtrack is smaller than MIN_SOUNDTRACK_SIZE, it will be treated as unmapped
-        therefore we need to mode the videos mapped to it, if any, to the game/videos folder,
+        therefore we need to move the videos mapped to it, if any, to the game/videos folder,
         that is, ou of the game/videos/sountrack folder
 
         Args:
@@ -190,7 +190,7 @@ def move_unmapped_videos(unmapped_videos:list[str]) -> tuple[list[str], list[str
 
     for unmapped_video in unmapped_videos:
         if not os.path.exists(unmapped_video):
-            if VERBOSE: print("move_unmapped_soundtracks: Skipping:", unmapped_video)
+            if VERBOSE: print("move_unmapped_videos: Skipping:", unmapped_video)
             continue
 
         splited_video = unmapped_video.split("/")
@@ -252,18 +252,6 @@ def move_unmapped_videos(unmapped_videos:list[str]) -> tuple[list[str], list[str
 
     return empty_videos_folders, empty_desc_folders, empty_csv_files
 
-def remove_empty_games(base_dir):
-    # TODO:
-    # Remove games with either no mapped videos or soundtracks
-
-    # Should be better to check this first and just move the whole folder
-    # Because we might move every video and than verify that we need to move all therest too
-    # Or move every audio and verify we have to move all the rest
-    # for game in tqdm(sorted(os.listdir(base_dir))):
-    #     game_path = os.path.join(base_dir, game)
-    #     videos_path = os.path.join(game_path, "videos")
-    pass
-
 def main(base_dir):
     gb_cnt_ump_s = 0 # global count unmapped soundtracks
     gb_cnt_total_s = 0 # global count total soundtracks
@@ -285,6 +273,7 @@ def main(base_dir):
                     tqdm.write("################ MOVING THE WHOLE GAME ###################\n")
                     tgt_game_path = os.path.join(UNMAPPED_DATSET_ROOT, game)
                     os.rename(game_path, tgt_game_path)
+                    continue
 
             gb_cnt_ump_s += cnt_ump_s
             gb_cnt_total_s += cnt_total_s
@@ -299,12 +288,13 @@ def main(base_dir):
             gb_cnt_ump_v += cnt_ump_v
             gb_cnt_total_v += cnt_total_v
 
+        if not DRY_RUN:
+            move_unmapped_soundtracks(unmapped_sdtks)
+            move_unmapped_videos(unmapped_videos)
+
     print(f"{gb_cnt_ump_s} audios of {gb_cnt_total_s}, or {(gb_cnt_ump_s/gb_cnt_total_s)*100}% of the audios, will be UNMAPPED")
     print(f"{gb_cnt_ump_v} videos of {gb_cnt_total_v}, or {(gb_cnt_ump_v/gb_cnt_total_v)*100}% of the videos, will be UNMAPPED")
 
-    if not DRY_RUN:
-        move_unmapped_soundtracks(unmapped_sdtks)
-        move_unmapped_videos(unmapped_videos)
 
 if __name__ == "__main__":
     if not DRY_RUN and not os.path.exists(UNMAPPED_DATSET_ROOT):
