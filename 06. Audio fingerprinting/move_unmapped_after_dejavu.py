@@ -219,6 +219,7 @@ def main(base_dir):
     gb_cnt_total_s = 0 # global count total soundtracks
     gb_cnt_ump_v = 0 # global count unmapped videos
     gb_cnt_total_v = 0 # global count total videos
+    unmapped_games = []
 
     for game in tqdm(sorted(os.listdir(base_dir))):
         game_path = os.path.join(base_dir, game)
@@ -235,6 +236,7 @@ def main(base_dir):
                 tqdm.write(f"################ MOVING THE WHOLE GAME {game} ###################\n")
                 tgt_game_path = os.path.join(UNMAPPED_DATSET_ROOT, game)
                 os.rename(game_path, tgt_game_path)
+                unmapped_games.append(game)
                 continue
 
         gb_cnt_ump_s += cnt_ump_s
@@ -256,7 +258,7 @@ def main(base_dir):
 
     print(f"{gb_cnt_ump_s} audios of {gb_cnt_total_s}, or {(gb_cnt_ump_s/gb_cnt_total_s)*100}% of the audios, will be UNMAPPED")
     print(f"{gb_cnt_ump_v} videos of {gb_cnt_total_v}, or {(gb_cnt_ump_v/gb_cnt_total_v)*100}% of the videos, will be UNMAPPED")
-
+    print(f"Unmaped games:\n{unmapped_games}")
 
 if __name__ == "__main__":
     if not DRY_RUN and not os.path.exists(UNMAPPED_DATSET_ROOT):
