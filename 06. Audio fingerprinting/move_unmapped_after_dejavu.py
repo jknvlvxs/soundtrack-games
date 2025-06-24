@@ -9,8 +9,8 @@ UNMAPPED_DATSET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/snes-
 MIN_SOUNDTRACK_SIZE = 8
 MIN_VIDEO_SIZE = 10 - 1 # -1 is a tolerance because many gameplay slices have nine dot something seconds of duration
 
-DRY_RUN = True
-VERBOSE = False
+DRY_RUN = False
+VERBOSE = True
 
 def move_videos_out(video_sdtk_path:str):
     """
@@ -123,9 +123,11 @@ def get_videos_to_unmap(videos_path, unmapped_sdtks):
             count_total += 1
 
             # Since DRY_RUN will not execute move_videos_out
+            already_counted = False
             if DRY_RUN:
                 soundtrack_path = os.path.abspath(os.path.join(videos_path, os.pardir, 'soundtracks', vid_or_folder+'.mp3'))
                 if soundtrack_path in unmapped_sdtks:
+                    already_counted = True
                     count_unmapped += 1
 
             video_file_path = os.path.join(folder_path, video_file)
@@ -134,7 +136,7 @@ def get_videos_to_unmap(videos_path, unmapped_sdtks):
             video_duration = float(probe['format']['duration'])
 
             if video_duration < MIN_VIDEO_SIZE:
-                count_unmapped += 1
+                if not already_counted: count_unmapped += 1
                 unmapped_videos.append(video_file_path)
 
     return unmapped_videos, count_unmapped, count_total
@@ -301,7 +303,7 @@ def main(base_dir):
         move_unmapped_videos(unmapped_videos)
 
 if __name__ == "__main__":
-    if not os.path.exists(UNMAPPED_DATSET_ROOT):
+    if not DRY_RUN and not os.path.exists(UNMAPPED_DATSET_ROOT):
         os.makedirs(UNMAPPED_DATSET_ROOT)
 
     main(DATASET_ROOT)
