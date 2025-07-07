@@ -121,6 +121,33 @@ DEFAULT_AMP_MIN = 7
 PEAK_NEIGHBORHOOD_SIZE = 7  # 20 was the original value.
 ```
 
+### Selecting Dejavu Confidence
+First we used `get_games_with_lowest_confidence.py` to get the games with the lowest input and fingerprinted confidences. This is done by averaging those mestrics across all videos of the game, than suming the results of both and getting the games with the lowest values. Fingerprinted confidence mean is multiplied by 10 since its values are usually much smalled than the input confidence ones. We call this `total_confidence`.
+
+Top 10 games with lower confidence, by the above calculation, were:
+1. baby-t-rex
+2. bioworm
+3. conveni-wars-barcode-battler-senki-super-senshi-shutsugeki-seyo
+4. cute-angela-great-journey
+5. dynamaite-the-lasvegas
+6. janyuuki-gokuu-randa
+7. maerchen-adventure-cotton-100
+8. kawasaki-superbike-challenge
+9. bs-nintendo-hp-5-31
+10. honkakuha-taikyoku-shougi-shougi-club
+
+It makes no sence to start annotating from the first game, because at lest the first few tens will be just 100% wrong mappings - this was verified empirically. We skipped the games where total_confidence was below 0.2, that is, the first 456 games.
+
+We manually annotate 100 videos in `videos_gt.json`. To choose the videos to annotate, we follow the list of games with lower confidence in ascending order. For each game we order it's videos by confidence values in descending order, obtained by summing `input_confidence + 10*fingerprinted_confidence`. This is done in `get_ordered_videos_by_confidence.py`. From this list, we listen to the examples until we find the first right one. From the first right onwards, we annotate until we reach 3 examples incorectely classified by Dejavu. Then, we go to the next game. If the top 3 examples are wrongly classified, we skip to the next game. We proceed until having 100 annotated examples. Whenever Dejavu mismatches the video, the soundtrack is labeled with "NaN".
+
+If a soundtrack appears more than once, only the last annotation, that is, the one with lower confidence, will be kept. Examples that look more like sound effects, like battle-submarine's soundtrack 8, were skiped. Videos containing two soundtracks, with no clear dominance of one of them, like bishoujo-janshi-suchie-pai video 00001, were skiped. Videos with few seconds, like jleague-soccer-prime-goal-2 video 00017 were skiped.
+
+As an empirical proof on how much this method of annotation works, in the game Alddin, 108 videos were annotated until the 3 errors. If one continues on annotating, only 4 more songs will be right and them it will be in very low confidence values, attributing songs to silent videos and etc.
+
+Finally, we use `grid_search_confidence.py` to run a grid search that aims at maximizing the accuracy of Dejavu matches by setting a threshold on input and fingerprinted confidences metrics, taking as groundtruth the annotations at `videos_gt.json`. Examples with values below such thresholds will be "discarted", as they are probably videos with no music at all.
+
+Results show that `input_confidence=0.0` and `fingerprinted_confidence=0.01` yield the best accuracy on the annotated data, of 83%, while loosing 16% of the videos.
+
 ## Games genres
 
 Generates deepseek_genres.csv to the next step
