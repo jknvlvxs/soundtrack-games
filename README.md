@@ -153,6 +153,16 @@ Results show that $input\_confidence=0.0$ and $fingerprinted\_confidence=0.01
 
 Fun fact: Running the grid search on the total confidence, instead of separated input and fingerprinted confidences, bumps the accuracy by 1% while losing another 1% of the data.
 
+### Move Unmpaed Soundtracks and Videos
+We run `move_unmaped_after_dejavu.py` to move all the following files:
+
+* soundtracks smaller than 8 seconds
+* videos smaller than 10 seconds (9 seconds in practice because many videos have nine dot something seconds)
+* sounstracks with no corresponding videos
+* videos with no corresponding soundtracks
+
+to a separated folder, a "parallel" dataset with data that is not useful for our training purposes. One can run the TODO script to merge both of this datasets.
+
 ## Games genres
 
 Generates deepseek_genres.csv to the next step

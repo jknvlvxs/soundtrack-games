@@ -1,0 +1,13 @@
+|    | genre      |   num_videos |
+|----|------------|--------------|
+|  0 | Action     |         2247 |
+|  1 | Adventure  |          717 |
+|  2 | Fighting   |         1687 |
+|  3 | Platform   |         4007 |
+|  4 | Puzzle     |          962 |
+|  5 | RPG        |         7746 |
+|  6 | Racing     |          926 |
+|  7 | Shooters   |         1426 |
+|  8 | Simulation |          618 |
+|  9 | Sports     |         1525 |
+| 10 | Strategy   |         1714 |
