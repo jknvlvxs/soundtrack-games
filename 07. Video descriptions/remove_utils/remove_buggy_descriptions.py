@@ -1,7 +1,5 @@
 # Remove empty descriptions
-
 import os
-import shutil
 
 ROOT = '/app/dataset/nintendo-snes-spc'
 
