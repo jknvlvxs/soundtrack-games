@@ -120,3 +120,71 @@ DEFAULT_FAN_VALUE = 10  # 15 was the original value.
 DEFAULT_AMP_MIN = 7
 PEAK_NEIGHBORHOOD_SIZE = 7  # 20 was the original value.
 ```
+
+### Selecting Dejavu Confidence
+Confidence values are usually small, but I have already seen ones like $input\_confidence=3$.  A typical input confidence value would be something around $0.35$, and a typical fingerprinted confidence is much smaller, like $0.02$. It makes no sense to put our threshold at 0, because it would be what we were already doing, that is, just accepting every map. Neither it does to put it at 3, because we would cut off almost every map.
+
+A good plan to obtain such value is to rank the mappings from the lowest to the highest confidence, and look at from what confidence values the mappings start to get right. To do so, we might perform the following steps:
+
+1. Rank the games from the worst mapped to the best one. 
+2. Since we are looking inside the worst-mapped games, we order the videos from the best to the worst mapped, because there will be a small number of videos with high confidence values in such games. 
+3. Annotate the mappings until they start to get wrong, attributing the correct soundtrack to the video in case Dejavu is right, and None otherwise. In this way, when the confidence is above the threshold, the Dejavu mapping must be the same as the annotated one, and it will be, since we only annotate the mappings when Dejavu is right. And when the confidence is below the threshold, the annotation must be None.
+4. Run a search to know which confidence values maximize the Dejavu mapping accuracy in relation to the annotated data. 
+
+In practice, a single confidence value, let us call it total confidence, was used to rank the games and videos, given by
+
+$total\\_confidence = input\\_confidence + 10*fingerprinted\\_confidence$
+
+the $10*fingerprinted\\_confidence$ was needed to compensate for the fact that the fingerprinted confidence is usually an order of magnitude smaller. The total_confidence value not only aggregates both confidences, but also forces the same weight for both, which is desirable since we don’t know if one is more important than the other. 
+
+To rank the games, the mean of the input and fingerprinted confidence was taken across all the mappings of the game, and then the total confidence was calculated. This was done at [get_games_with_lowest_confidence.py](https://github.com/jknvlvxs/vmdb/blob/8016beafa6afce5dededfbd6b35695dadf6b6eb7/06.%20Audio%20fingerprinting/select_confidence/get_games_with_lowest_confidence.py).
+
+Since it makes no sense to start annotating from the first games, because at least the first few tens will be just 100% wrong mappings, this was verified empirically, I skipped games where total confidence was below $0.2$, that is, the first 456 games.
+
+I manually annotated 109 videos in [videos_gt.json](https://github.com/jknvlvxs/vmdb/blob/8016beafa6afce5dededfbd6b35695dadf6b6eb7/06.%20Audio%20fingerprinting/select_confidence/videos_gt.json) - the goal was 100, but by using the following annotation methodology, we ended up with 109. For each game, we order its videos by total confidence values in descending order. From this list, we listen to the examples until we find the first right one. From the first right onwards, we annotate until we reach 3 examples incorrectly mapped by Dejavu. Then, we go on to the next game. If the top 3 examples are wrongly classified, we skip to the next game. We proceed until we have 100 annotated examples. Whenever Dejavu mismatches the video, the soundtrack is labeled with "NaN".
+
+If a soundtrack appears more than once, only the last annotation, that is, the one with the lowest total confidence, will be kept. Examples that look more like sound effects, like the battle-submarine's soundtrack 8, were skipped. Videos containing two soundtracks, with no clear dominance of one of them, like bishoujo-janshi-suchie-pai video 00001, were skipped. Videos with a few seconds, like jleague-soccer-prime-goal-2 video 00017, were skipped.
+
+As an empirical proof of how much this method of annotation works, in the game Alddin, 108 videos were annotated until the 3 errors. If one continues on annotating, only 4 more songs will be right, and then it will be in very low confidence values, attributing songs to silent videos and etc.
+
+Finally, we use grid_search_confidence.py to run a grid search that aims at maximizing the accuracy of Dejavu matches by setting a threshold on input and fingerprinted confidence metrics, taking as ground truth the annotations in videos_gt.json. Examples with values below such thresholds will be "discarded", as they are probably wrong mappings, including videos with no music at all.
+
+Results show that $input\_confidence=0.0$ and $fingerprinted\_confidence=0.01$ yield the best accuracy on the annotated data, of $83\%$, while losing $16\%$ of the mapped videos. The videos below the threshold were unmapped by [apply_confidence_filter.py](https://github.com/jknvlvxs/vmdb/blob/development/06.%20Audio%20fingerprinting/select_confidence/apply_confidence_filter.py).
+
+Fun fact: Running the grid search on the total confidence, instead of separated input and fingerprinted confidences, bumps the accuracy by 1% while losing another 1% of the data.
+
+## Games genres
+
+Generates deepseek_genres.csv to the next step
+
+## Split dataset
+
+### get_videos_info
+```
+python get_videos_info.py
+
+will generate file videos_info.csv with all dataset
+```
+
+### load_downsample
+```
+get selected_videos.jsonl from step 07 to assert that every soundtrack will have at least one video selected
+
+filter videos_info.csv with the selected_videos.jsonl will generate a new videos_info.csv
+```
+> cd load_downsample
+
+> python downsample.py && cd ../plots && python plot_videos_info.py --downsampled && cd ../load_downsample
+
+> rm -rf videos_info.csv && rm -rf ../plots/downsample
+
+
+### plots
+```
+run plots to get dataset info
+```
+
+### split
+```
+run split with selected_videos_info.csv
+```
