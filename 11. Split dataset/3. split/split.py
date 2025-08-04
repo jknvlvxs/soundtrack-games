@@ -1,4 +1,6 @@
 #%%
+import os
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -89,6 +91,10 @@ def save_split_txt(split:GroupSet, name:str):
     return games
 
 def main():
+    splits_path = os.path.abspath(os.path.join(__file__, os.pardir, 'splits'))
+    if not os.path.exists(splits_path):
+        os.mkdir(splits_path)
+
     df = pd.read_csv("../2. downsample/videos_info.csv")
 
     groups = GroupSet.from_df(df, 'game_id', 'genre')

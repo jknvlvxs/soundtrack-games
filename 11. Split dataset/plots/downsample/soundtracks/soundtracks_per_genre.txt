@@ -1,13 +1,13 @@
 |    | genre      |   num_soundtracks |
 |----|------------|-------------------|
-|  0 | Action     |                86 |
-|  1 | Adventure  |                69 |
-|  2 | Fighting   |                91 |
-|  3 | Platform   |               105 |
-|  4 | Puzzle     |                58 |
+|  0 | Action     |                85 |
+|  1 | Adventure  |                67 |
+|  2 | Fighting   |                87 |
+|  3 | Platform   |               101 |
+|  4 | Puzzle     |                56 |
 |  5 | RPG        |               102 |
-|  6 | Racing     |                51 |
+|  6 | Racing     |                47 |
 |  7 | Shooters   |                63 |
-|  8 | Simulation |                46 |
-|  9 | Sports     |                49 |
-| 10 | Strategy   |                82 |
+|  8 | Simulation |                45 |
+|  9 | Sports     |                44 |
+| 10 | Strategy   |                78 |

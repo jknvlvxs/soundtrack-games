@@ -20,7 +20,7 @@ def remove_by_n_of_segments(df:pd.DataFrame, n_segments:int=60) -> tuple[pd.Data
     return valid_df, invalid_df
 
 
-def calculate_genres_weights(genre_counts:pd.DataFrame, scaling_factor:int=1.5) -> dict[str, float]:
+def calculate_genres_weights(genre_counts:pd.DataFrame, scaling_factor:float=1.5) -> dict[str, float]:
     """
         Define the target uniform distribution given by:
 
@@ -49,7 +49,6 @@ def downsample(df:pd.DataFrame):
     # all seguiments for the given game (unmaped ones are ignored)
     # Second because I checked them by hand (4-nin-shougi and zootto-mahjong) and they are a complete
     # match of the game in question (shougi and mahjong), so they are complete gameplays in a sense
-
     #df, invalid_df = remove_by_n_of_segments(df)
 
     #print("The following games have less than 10min of gameplay:")
@@ -118,7 +117,7 @@ def downsample(df:pd.DataFrame):
     return pd.concat(dfs).reset_index(drop=True)
 
 def main():
-    df = pd.read_csv("../get_videos_info/videos_info.csv")
+    df = pd.read_csv("../1. get_videos_info/videos_info.csv")
     filtered_df = downsample(df)
     filtered_df = filtered_df.sort_values(by=["game_id", "soundtrack"])
     filtered_df.to_csv("videos_info.csv", index=False)
