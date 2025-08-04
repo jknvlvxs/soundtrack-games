@@ -151,11 +151,11 @@ $total\\_confidence = input\\_confidence + 10*fingerprinted\\_confidence$
 
 the $10*fingerprinted\\_confidence$ was needed to compensate for the fact that the fingerprinted confidence is usually an order of magnitude smaller. The total_confidence value not only aggregates both confidences, but also forces the same weight for both, which is desirable since we don’t know if one is more important than the other. 
 
-To rank the games, the mean of the input and fingerprinted confidence was taken across all the mappings of the game, and then the total confidence was calculated. This was done at [get_games_with_lowest_confidence.py](https://github.com/jknvlvxs/vmdb/blob/8016beafa6afce5dededfbd6b35695dadf6b6eb7/06.%20Audio%20fingerprinting/select_confidence/get_games_with_lowest_confidence.py).
+To rank the games, the mean of the input and fingerprinted confidence was taken across all the mappings of the game, and then the total confidence was calculated. This was done at [get_games_with_lowest_confidence.py](./06.%20Audio%20fingerprinting/select_confidence/get_games_with_lowest_confidence.py).
 
 Since it makes no sense to start annotating from the first games, because at least the first few tens will be just 100% wrong mappings, this was verified empirically, I skipped games where total confidence was below $0.2$, that is, the first 456 games.
 
-I manually annotated 109 videos in [videos_gt.json](https://github.com/jknvlvxs/vmdb/blob/8016beafa6afce5dededfbd6b35695dadf6b6eb7/06.%20Audio%20fingerprinting/select_confidence/videos_gt.json) - the goal was 100, but by using the following annotation methodology, we ended up with 109. For each game, we order its videos by total confidence values in descending order. From this list, we listen to the examples until we find the first right one. From the first right onwards, we annotate until we reach 3 examples incorrectly mapped by Dejavu. Then, we go on to the next game. If the top 3 examples are wrongly classified, we skip to the next game. We proceed until we have 100 annotated examples. Whenever Dejavu mismatches the video, the soundtrack is labeled with "NaN".
+I manually annotated 109 videos in [videos_gt.json](./06.%20Audio%20fingerprinting/select_confidence/videos_gt.json) - the goal was 100, but by using the following annotation methodology, we ended up with 109. For each game, we order its videos by total confidence values in descending order. From this list, we listen to the examples until we find the first right one. From the first right onwards, we annotate until we reach 3 examples incorrectly mapped by Dejavu. Then, we go on to the next game. If the top 3 examples are wrongly classified, we skip to the next game. We proceed until we have 100 annotated examples. Whenever Dejavu mismatches the video, the soundtrack is labeled with "NaN".
 
 If a soundtrack appears more than once, only the last annotation, that is, the one with the lowest total confidence, will be kept. Examples that look more like sound effects, like the battle-submarine's soundtrack 8, were skipped. Videos containing two soundtracks, with no clear dominance of one of them, like bishoujo-janshi-suchie-pai video 00001, were skipped. Videos with a few seconds, like jleague-soccer-prime-goal-2 video 00017, were skipped.
 
@@ -163,7 +163,7 @@ As an empirical proof of how much this method of annotation works, in the game A
 
 Finally, we use grid_search_confidence.py to run a grid search that aims at maximizing the accuracy of Dejavu matches by setting a threshold on input and fingerprinted confidence metrics, taking as ground truth the annotations in videos_gt.json. Examples with values below such thresholds will be "discarded", as they are probably wrong mappings, including videos with no music at all.
 
-Results show that $input\\_confidence=0.0$ and $fingerprinted\\_confidence=0.01$ yield the best accuracy on the annotated data, of $83\%$, while losing $16\%$ of the mapped videos. The videos below the threshold were unmapped by [apply_confidence_filter.py](https://github.com/jknvlvxs/vmdb/blob/development/06.%20Audio%20fingerprinting/select_confidence/apply_confidence_filter.py).
+Results show that $input\\_confidence=0.0$ and $fingerprinted\\_confidence=0.01$ yield the best accuracy on the annotated data, of $83\%$, while losing $16\%$ of the mapped videos. The videos below the threshold were unmapped by [apply_confidence_filter.py](./06.%20Audio%20fingerprinting/select_confidence/apply_confidence_filter.py).
 
 Fun fact: Running the grid search on the total confidence, instead of separated input and fingerprinted confidences, bumps the accuracy by 1% while losing another 1% of the data.
 
@@ -176,10 +176,6 @@ We run `move_unmaped_after_dejavu.py` to move all the following files:
 * videos with no corresponding soundtracks
 
 to a separated folder, a "parallel" dataset with data that is not useful for our training purposes. One can run the TODO script to merge both of this datasets.
-
-## Games genres
-
-Generates deepseek_genres.csv to the next step
 
 ## Split dataset
 
