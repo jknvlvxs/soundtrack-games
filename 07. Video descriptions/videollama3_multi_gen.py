@@ -1,8 +1,6 @@
 # Same as videollama3.py but allows for multiple genres
-
 import os
 import time
-from functools import partial
 from copy import deepcopy
 import argparse
 import traceback
@@ -31,7 +29,6 @@ MODEL_PATH = "DAMO-NLP-SG/VideoLLaMA3-7B"
 session: requests.Session
 
 def init_process():
-    #time.sleep(5*pid) # avoid error 429 (Too Many Requests) on Hugging Face
     global session
     session = requests.Session()
     atexit.register(session.close)
@@ -53,19 +50,20 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
     g_loger.warning(f"Process {pid} running on GPU {gpu} with {len(videos_paths)} videos, from {videos_paths[0][0].split('/')[-1]} to {videos_paths[-1][0].split('/')[-1]}")
 
     video_path = "" #just a reference to this variable
-    try:
-        # Model
-        model = AutoModelForCausalLM.from_pretrained(
-            MODEL_PATH,
-            trust_remote_code=True,
-            device_map=gpu,
-            torch_dtype=torch.bfloat16,
-            attn_implementation="flash_attention_2",
-            cache_dir="/app/dataset/cache_hug",
-            local_files_only=True
-        )
 
-        for video_path in tqdm(videos_paths, desc=f'Process {pid}'):
+    # Model
+    model = AutoModelForCausalLM.from_pretrained(
+        MODEL_PATH,
+        trust_remote_code=True,
+        device_map=gpu,
+        torch_dtype=torch.bfloat16,
+        attn_implementation="flash_attention_2",
+        cache_dir="/app/dataset/cache_hug",
+        local_files_only=True
+    )
+
+    for video_path in tqdm(videos_paths, desc=f'Process {pid}'):
+        try:
             video_path, result_txt_path = video_path
 
             videos_descriptions_folder = os.path.abspath(os.path.join(result_txt_path, os.path.pardir))
@@ -74,11 +72,6 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
 
             if not os.path.isdir(videos_descriptions_folder):
                 os.mkdir(videos_descriptions_folder)
-
-            # Video Logger
-            vid_logger = logging.getLogger(video_file_name)
-            vid_log_f = logging.FileHandler(result_txt_path, 'a', 'utf-8')
-            vid_logger.addHandler(vid_log_f)
 
             conversation = [
                 {"role": "system", "content": "You are a helpful assistant."},
@@ -112,6 +105,11 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
             output_ids = model.generate(**inputs, max_new_tokens=512, top_k=20)
             response = processor.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
 
+            # Video Logger -> It has to be here because if there is any error with the model the txt file shouldn't be created
+            vid_logger = logging.getLogger(video_file_name)
+            vid_log_f = logging.FileHandler(result_txt_path, 'a', 'utf-8')
+            vid_logger.addHandler(vid_log_f)
+
             vid_logger.warning(response)
 
             del processor
@@ -119,9 +117,9 @@ def run_videollama(video_process:tuple[int, str, list[str]]):
             del output_ids
             del response
 
-    except Exception as e:
-        g_loger.critical(f"Error for video {video_path}")
-        g_loger.critical(traceback.format_exc())
+        except Exception as e:
+            g_loger.critical(f"Error for video {video_path}")
+            g_loger.critical(traceback.format_exc())
 
 def get_videos_paths(dataset_folder):
     files = []
@@ -196,7 +194,7 @@ if __name__ == '__main__':
 
     g_loger.warning(f"NVIDEOS {n_videos}")
 
-    lin_div = torch.linspace(0, n_videos, args.n_processes+1, dtype=int).tolist()
+    lin_div = torch.linspace(0, n_videos, args.n_processes+1, dtype=int).tolist() # type: ignore
 
     videos_process_list = [] # list to wrap a list of videos per process
 
