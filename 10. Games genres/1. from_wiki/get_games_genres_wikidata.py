@@ -5,7 +5,7 @@ from wikidata_api import WikiDataAPI
 ROOT = '/home/es119256/datasets/vmdb/nintendo-snes-spc'
 SAVE_PATH = '/home/es119256/datasets/vmdb/wiki_genres.json'
 
-def get_genre_from_wiki(game_name: str) -> str|None:
+def get_genre_from_wiki(game_name: str) -> tuple[list[str], str]:
     w_api = WikiDataAPI()
     page_results = w_api.query_pages(game_name)
 
