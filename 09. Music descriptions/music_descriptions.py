@@ -16,14 +16,34 @@ from ollama_deepseek_api import OllamaChat
 SEED = 42
 session: requests.Session
 
+class Config():
+    def __init__(self, prompt:str, video_desc_path:str, music_desc_path:str) -> None:
+        self.prompt=prompt
+        self.video_desc_path=video_desc_path
+        self.music_desc_path=music_desc_path
+
+SINGLE_GENRE = Config(
+    prompt="You will receive a description of a gameplay video. The video description starts by differentiating between static (menu, inventory, and map) scenes and gameplay ones. If it is a gameplay, it will also describe the actions happening, the environment, the movement speed, and the game mechanics. In both cases, it will describe the art style and the possible game genre. Your task will be to respond with a music description that fits such a video. Your response will be sent into a text-to-music model that expects a music description like in the following example: 'A grand orchestral arrangement with thunderous percussion, epic brass fanfares, and soaring strings, creating a cinematic atmosphere fit for a heroic battle'. You must put your response between answer tags, like <answer>MUSIC_DESCRIPTION</answer>, where MUSIC_DESCRIPTION is the text of your answer describing the song.",
+    video_desc_path="videos_descriptions",
+    music_desc_path="music_descriptions"
+)
+
+MULTI_GENRE = Config(
+    prompt="You will receive a description of a gameplay video. The video description starts by differentiating between static (menu, inventory, and map) scenes and gameplay ones. If it is a gameplay, it will also describe the actions happening, the environment, the movement speed, and the game mechanics. In both cases, it will describe the art style and the possible game genres. Your task will be to respond with a music description that fits such a video. Your response will be sent into a text-to-music model that expects a music description like in the following example: 'A grand orchestral arrangement with thunderous percussion, epic brass fanfares, and soaring strings, creating a cinematic atmosphere fit for a heroic battle'. You must put your response between answer tags, like <answer>MUSIC_DESCRIPTION</answer>, where MUSIC_DESCRIPTION is the text of your answer describing the song.",
+    video_desc_path="videos_descriptions_mg",
+    music_desc_path="music_descriptions_mg"
+)
+
+CONFIG = MULTI_GENRE
+
 def get_descriptions_paths(dataset_folder):
     g_loger = logging.getLogger('global_logger')
 
     files = []
     skiped = 0
     for game_folder in sorted(os.listdir(dataset_folder)):
-        videos_descriptions_folder = os.path.join(dataset_folder, game_folder, 'videos_descriptions')
-        music_descriptions_folder = os.path.join(dataset_folder, game_folder, 'music_descriptions')
+        videos_descriptions_folder = os.path.join(dataset_folder, game_folder, CONFIG.video_desc_path)
+        music_descriptions_folder = os.path.join(dataset_folder, game_folder, CONFIG.music_desc_path)
 
         if os.path.exists(videos_descriptions_folder):
             for video_description_file in sorted(os.listdir(videos_descriptions_folder)):
@@ -33,6 +53,7 @@ def get_descriptions_paths(dataset_folder):
                 if not os.path.exists(music_description_file_path):
                     files.append((video_description_file_path, music_description_file_path))
                 else:
+                    print(f"SKIPING {video_description_file_path}")
                     skiped += 1
 
     g_loger.warning(f"SKIPED {skiped}")
@@ -49,10 +70,16 @@ def get_video_description_from_file(file:str) -> str:
         return f.read()
 
 def format_deepseek_res(res:str) -> dict[str, str]:
-    split = res.split('<think>\n', maxsplit=1)[1].split('\n</think>')
-    think, music_prompt = split
+    # Get think
+    think = res.split('<think>\n')
+    think = think[0] if len(think) == 1 else think[1]
+    think = think.split('\n</think>')[0]
 
-    music_prompt = music_prompt.split('"')[1]
+    # Get answer
+    music_prompt = res.split('\n</think>')
+    music_prompt = music_prompt[0] if len(music_prompt) == 1 else music_prompt[1]
+    music_prompt = music_prompt.split('<answer>')[1]
+    music_prompt = music_prompt.split('</answer>')[0]
 
     return {
         'think': think,
@@ -76,9 +103,9 @@ def run_ollama(pid:int, videos_paths:list[tuple[str, str]]) -> dict[str, bool|in
     video_description_path = ""
     current_idx = 0
     try:
-        chat = OllamaChat(1234, 1)
+        chat = OllamaChat(SEED, 1)
         res = chat.send(
-                "You will receive descriptions of gameplay videos. Your task will be to, given a video description, answer with a music description that fits the video. The video description was given by a Visual Question Answering model when asked to talk about the actions and movement of speed happening in the video. It was also asked to describe the game's environment, art style, mechanics and genre. The music description will be sent to a text-to-music model that expects a description like the following example: 'A grand orchestral arrangement with thunderous percussion, epic brass fanfares, and soaring strings, creating a cinematic atmosphere fit for a heroic battle'. You must put your answer in quotes.",
+                CONFIG.prompt,
                 setup=True
             )
 
@@ -98,8 +125,8 @@ def run_ollama(pid:int, videos_paths:list[tuple[str, str]]) -> dict[str, bool|in
 
             with open(music_description_path, "w") as json_file: 
                 json.dump(music_description_dict, json_file, indent=4)
-            
-            g_loger.warning(video_description_path + ': ' + music_description_dict['music_prompt'])
+
+            g_loger.warning(video_description_path.split('/')[-1] + ': ' + music_description_dict['music_prompt'])
 
     except Exception as e:
         g_loger.critical(f"Error in process {pid} for video at idx {current_idx}: {video_description_path}")
@@ -129,7 +156,7 @@ def save_failed_video_description(descriptions_paths:tuple[str, str], file_path:
 def run_ollama_observer(video_process:tuple[int, list[tuple[str, str]]], args):
     """
         This will be a parent process to run_ollama to keep an eye on it
-        In case it fails, the process will resume skipping the problematic video
+        In case it fails, the process will resume skipping the problematic video description
         Problematic videos will be logged in the --save_failed_path
     """
     pid, videos_paths = video_process
@@ -161,11 +188,10 @@ if __name__ == '__main__':
     g_loger = logging.getLogger('global_logger')
 
     # Parse arguments
-    parser = argparse.ArgumentParser(description='videollama3.py')
-    # "../5. Database/nintendo-snes-spc/"
-    parser.add_argument('--dataset_root', type=str, default="/home/es119256/datasets/vmdb/nintendo-snes-spc", help="path for the dataset games folder")
-    parser.add_argument('--save_failed_path', type=str, default="/home/es119256/task_9_failed_videos.jsonl", help="path for saving the problematic videos")
-    parser.add_argument('--n_processes', type=int, default=25, help="number of processes to run in parallel setted in OLLAMA_MAX_LOADED_MODELS inside the Ollama container") 
+    parser = argparse.ArgumentParser(description='music_descriptions.py')
+    parser.add_argument('--dataset_root', type=str, default="/home/es119256/dados/datasets/vmdb_2/nintendo-snes-spc", help="path for the dataset games folder")
+    parser.add_argument('--save_failed_path', type=str, default="/home/es119256/dados/datasets/vmdb_2/task_9_failed_videos.jsonl", help="path for saving the problematic videos")
+    parser.add_argument('--n_processes', type=int, default=30, help="number of processes to run in parallel setted in OLLAMA_MAX_LOADED_MODELS inside the Ollama container") 
     args = parser.parse_args()
 
     # Collect videos descriptions
@@ -174,9 +200,9 @@ if __name__ == '__main__':
 
     g_loger.warning(f"NVIDEOS {n_videos}")
 
-    lin_div = torch.linspace(0, n_videos, args.n_processes+1, dtype=int).tolist()
+    lin_div = torch.linspace(0, n_videos, args.n_processes+1, dtype=int).tolist() # type: ignore
 
-    videos_process_list:list[tuple[int, list[tuple[str, str]]] ]= [] # list to wrap a list of videos per process
+    videos_process_list:list[tuple[int, list[tuple[str, str]]]] = [] # list to wrap a list of videos per process
 
     # Split games across processes
     for idx in range(len(lin_div)-1):

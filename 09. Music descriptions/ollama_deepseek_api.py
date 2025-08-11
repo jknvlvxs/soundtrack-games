@@ -67,7 +67,7 @@ class OllamaChat():
                 fail = False
             except Exception as e:
                 print("OLLAMA REQUEST EXCEPTION: ", e)
-                fail == True
+                fail = True
                 count += 1
 
         if fail == False:
