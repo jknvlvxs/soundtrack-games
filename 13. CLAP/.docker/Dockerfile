@@ -8,6 +8,16 @@ RUN apt-get -y install ffmpeg
 
 RUN python3 -m pip install laion-clap
 
+# rust compiler for transformers
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+RUN python3 -m pip install transformers torchaudio torchvision
+
+RUN python3 -m pip install umap-learn
+
+RUN python3 -m pip install tqdm
+
 WORKDIR /app
 
 # docker build --no-cache . -t laion_clap
