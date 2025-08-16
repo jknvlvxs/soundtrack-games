@@ -55,7 +55,8 @@ def main():
         audio, sr = torchaudio.load(audio_path)
         audio = mono_and_resample(audio, orig_freq=sr, new_freq=48_000)
 
-        audio_embeddings = model.get_audio_embedding_from_data(audio, use_tensor=True).squeeze()
+        audio_embeddings = model.get_audio_embedding_from_data(audio, use_tensor=True)
+        audio_embeddings = audio_embeddings.squeeze().detach().cpu()
 
         embeddings_folder = os.path.abspath(os.path.join(audio_emb_path, os.pardir))
         if not os.path.exists(embeddings_folder):
