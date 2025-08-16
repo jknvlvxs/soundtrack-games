@@ -1,10 +1,12 @@
+# Move videos bellow certain condifen
 import os
 import ffmpeg
 import pandas as pd
 from tqdm import tqdm
 
-DATASET_ROOT = "/app/dataset/nintendo-snes-spc"
-UNMAPPED_DATSET_ROOT = "/app/dataset/nintendo-snes-spc-unmapped"
+#DATASET_ROOT = "/app/dataset/nintendo-snes-spc"
+DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/mock"
+UNMAPPED_DATSET_ROOT = f"{DATASET_ROOT}-unmapped"
 
 MIN_SOUNDTRACK_SIZE = 8
 MIN_VIDEO_SIZE = 10 - 1 # -1 is a tolerance because many gameplay slices have nine dot something seconds of duration
