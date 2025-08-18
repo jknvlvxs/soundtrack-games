@@ -41,7 +41,7 @@ class Config():
         self.video_desc_path=video_desc_path
 
 MULTI_GENRE = Config(
-    prompt=f"You will receive a description of a gameplay video. Your task will be to summarize such video description. You should mention the main genre of the game. Your answer should start describing the video right away. Avoid expressions like 'The video appears to be...' or 'The video shows..', since they don't mean anything and would just make the answer longer.",
+    prompt="You will receive a description of a gameplay video. Your task will be to summarize such video description. You should mention the main genre of the game. Your answer should start describing the video right away. Avoid expressions like 'The video appears to be...' or 'The video shows..', since they don't mean anything and would just make the answer longer.",
     video_desc_path="videos_descriptions_mg"
 )
 
@@ -207,7 +207,7 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig(
-        filename="logs.log",
+        filename="logs_test.log",
         filemode='a',
         encoding='utf-8'
     )
