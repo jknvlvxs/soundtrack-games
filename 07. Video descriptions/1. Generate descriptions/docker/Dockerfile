@@ -26,7 +26,7 @@ RUN python3 -m pip install -r video_desc_req.txt
 # -d \
 # -it \
 # --name videollama3 \
-# --volume "/home/es119256/vmdb/07. Video descriptions":/app/code \
+# --volume "/home/es119256/vmdb/07. Video descriptions/1. Generate descriptions":/app/code \
 # --volume /home/es119256/dados/datasets/vmdb_2:/app/dataset \
 # --shm-size=6gb \
 # videollama3
