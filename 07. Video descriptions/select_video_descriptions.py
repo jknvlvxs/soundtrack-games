@@ -1,4 +1,5 @@
 ############################################################################################################################
+# Not used anymore: Replaced by downsample in task 11
 # Select videos descriptions according with the file mapping in order to have at least one video description per soundtrack
 ############################################################################################################################
 import os

@@ -1,16 +1,50 @@
+# Move videos bellow certain condifen
 import os
 import ffmpeg
 import pandas as pd
 from tqdm import tqdm
 
-DATASET_ROOT = "/app/dataset/nintendo-snes-spc"
-UNMAPPED_DATSET_ROOT = "/app/dataset/nintendo-snes-spc-unmapped"
+#DATASET_ROOT = "/app/dataset/nintendo-snes-spc"
+#DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/mock"
+DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/unity_tests/move_unmapped"
+UNMAPPED_DATSET_ROOT = f"{DATASET_ROOT}-unmapped"
 
 MIN_SOUNDTRACK_SIZE = 8
 MIN_VIDEO_SIZE = 10 - 1 # -1 is a tolerance because many gameplay slices have nine dot something seconds of duration
 
 DRY_RUN = False
 VERBOSE = True
+
+sdtk_unmapped_folder_dict = [
+    {
+        'folder': 'soundtracks_clap',
+        'format': '.pt',
+        'complete': True
+    }
+]
+
+video_unmapped_folder_dict = [
+    {
+        'folder': 'videos_descriptions',
+        'format': '.txt',
+        'complete': True
+    },
+    {
+        'folder': 'videos_descriptions_mg',
+        'format': '.txt',
+        'complete': True
+    },
+    {
+        'folder': 'descs_sums_mg',
+        'format': '.txt',
+        'complete': False
+    },
+    {
+        'folder': 'music_descriptions_mg',
+        'format': '.json',
+        'complete': False
+    }
+]
 
 def move_videos_out(video_sdtk_path:str):
     """
@@ -21,20 +55,16 @@ def move_videos_out(video_sdtk_path:str):
         Args:
             video_sdtk_path: path to the game/videos/sountrack folder
     """
-    if os.path.exists(video_sdtk_path):
-        dir_list = os.listdir(video_sdtk_path)
+    videos_folder_path = os.path.abspath(os.path.join(video_sdtk_path, os.pardir)) # game/videos
 
-        if len(dir_list) > 0:
-            videos_folder_path = os.path.abspath(os.path.join(video_sdtk_path, os.pardir)) # game/videos
+    for video in os.listdir(video_sdtk_path):
+        current_vid_path = os.path.join(video_sdtk_path, video)
+        tgt_vid_pathj = os.path.join(videos_folder_path, video)
 
-            for video in dir_list:
-                current_vid_path = os.path.join(video_sdtk_path, video)
-                tgt_vid_pathj = os.path.join(videos_folder_path, video)
+        os.rename(current_vid_path, tgt_vid_pathj)
 
-                os.rename(current_vid_path, tgt_vid_pathj)
-
-            os.rmdir(video_sdtk_path)
-            if VERBOSE: tqdm.write(f"Video folder {video_sdtk_path} was EMPTY, so it was REMOVED")
+    os.rmdir(video_sdtk_path)
+    if VERBOSE: tqdm.write(f"Video folder {video_sdtk_path} was EMPTY, so it was REMOVED")
 
 def get_sdtks_to_unmap(soundtracks_path:str, videos_path:str):
     """
@@ -57,37 +87,44 @@ def get_sdtks_to_unmap(soundtracks_path:str, videos_path:str):
         video_folder_path = os.path.join(videos_path, vid_or_folder)
         soundtrack_path = os.path.join(soundtracks_path, vid_or_folder+'.mp3')
 
-        if os.path.isdir(video_folder_path):
-            if len(os.listdir(video_folder_path)) > 0:
-                mapped_sdtks.append(soundtrack_path)
-            # If the corresponding folder to that soundtrack in the videos folder is empty or non-existent
-            else:
-                count_unmapped += 1
-                unmapped_sdtks.append(soundtrack_path)
+        # Skip mp4 files
+        if not os.path.isdir(video_folder_path):
+            continue
 
-                if DRY_RUN:
-                    if VERBOSE: tqdm.write(f"Video folder {video_folder_path} is EMPTY")
-                else:
-                    os.rmdir(video_folder_path)
-                    if VERBOSE: tqdm.write(f"Video folder {video_folder_path} was EMPTY, so it was REMOVED")
+        # If video soundtrack folder has videos, the soundtrack is mapped  
+        if len(os.listdir(video_folder_path)) > 0:
+            mapped_sdtks.append(soundtrack_path)
+            continue
+
+        # If the corresponding folder to that soundtrack in the videos folder is empty, it is unmapped
+        count_unmapped += 1
+        unmapped_sdtks.append(soundtrack_path)
+
+        if DRY_RUN:
+            if VERBOSE: tqdm.write(f"Video folder {video_folder_path} is EMPTY")
+        else:
+            os.rmdir(video_folder_path)
+            if VERBOSE: tqdm.write(f"Video folder {video_folder_path} was EMPTY, so it was REMOVED")
 
     # For each soundtrack
     for soundtrack_file in sorted(os.listdir(soundtracks_path)):
         count_total += 1
         soundtrack_path = os.path.join(soundtracks_path, soundtrack_file)
 
-        # If already unmaped, continue. 
+        # If already unmaped, continue.
         if soundtrack_path in unmapped_sdtks:
             continue
 
-        # A soundtrack might not even have a folder at the videos folder,
-        # so we still need to check if it isn't in the mapped_sdtks
+        # If not mapped
         if soundtrack_path not in mapped_sdtks:
+            # We have soundtracks that didnt even have a corresponding folder in the videos folder
+            # So we need to unmap those
             count_unmapped += 1
             unmapped_sdtks.append(soundtrack_path)
             continue
 
-        # If audio smaller than MIN_SOUNDTRACK_SIZE
+        # Now that we are left with mapped soundtracks
+        # If they are smaller than MIN_SOUNDTRACK_SIZE
         probe = ffmpeg.probe(soundtrack_path)
         sdtk_duration = float(probe['format']['duration'])
 
@@ -95,8 +132,9 @@ def get_sdtks_to_unmap(soundtracks_path:str, videos_path:str):
             count_unmapped += 1
             unmapped_sdtks.append(soundtrack_path)
 
-            # Move all videos corresponding to that soundtrack out of the game/videos/soundtrack folder
+            # Move all videos corresponding to that soundtrack out of the game/videos/soundtrack to the game/videos folder
             video_sdtk_path = os.path.join(videos_path, soundtrack_file.split('.')[0])
+            if VERBOSE: tqdm.write(f"Video folder {video_sdtk_path} corresponds to a SMALL soundtrack, so it WILL BE UNMAPPED")
             if not DRY_RUN: move_videos_out(video_sdtk_path)
 
     return unmapped_sdtks, count_unmapped, count_total
@@ -122,16 +160,15 @@ def get_videos_to_unmap(videos_path:str, unmapped_sdtks:list[str]):
         folder_path = video_or_folder_path
         for video_file in os.listdir(folder_path): # game/videos/soundtrack
             count_total += 1
+            video_file_path = os.path.join(folder_path, video_file)
 
-            # Since DRY_RUN will not execute move_videos_out
+            # Since DRY_RUN will not execute move_videos_out, we'll check if the video is part of an unmapped soundtrack
             if DRY_RUN:
                 soundtrack_path = os.path.abspath(os.path.join(videos_path, os.pardir, 'soundtracks', vid_or_folder+'.mp3'))
                 if soundtrack_path in unmapped_sdtks:
                     count_unmapped += 1
                     unmapped_videos.append(video_file_path)
                     continue
-
-            video_file_path = os.path.join(folder_path, video_file)
 
             probe = ffmpeg.probe(video_file_path)
             video_duration = float(probe['format']['duration'])
@@ -141,6 +178,7 @@ def get_videos_to_unmap(videos_path:str, unmapped_sdtks:list[str]):
 
                 # Move video out the soundtrack path
                 tgt_video_file_path = os.path.join(videos_path, video_file)
+                if VERBOSE: print(f"Video {video_file_path} is SMALLER than MIN_VIDEO_SIZE and will be unmapped")
                 if not DRY_RUN:
                     os.rename(video_file_path, tgt_video_file_path)
 
@@ -150,7 +188,8 @@ def get_videos_to_unmap(videos_path:str, unmapped_sdtks:list[str]):
 
                         sdtk_path = os.path.abspath(os.path.join(videos_path, os.pardir))
                         sdtk_path = os.path.join(sdtk_path, 'soundtracks', vid_or_folder+'.mp3')
-                        unmapped_sdtks.append(sdtk_path)
+                        unmapped_sdtks.append(sdtk_path) #TODO When running in DRY_RUN this will seen as an audio that was not unmapped
+                        if VERBOSE: print(f"Soundtrack {sdtk_path} had NO VIDEOS with MIN_VIDEO_SIZE and was unmapped")
 
                 unmapped_videos.append(tgt_video_file_path)
 
@@ -177,6 +216,29 @@ def move_unmapped_soundtracks(unmapped_sdtks:list[str]):
         sdtk_dest_path = os.path.join(sdtk_dest_folder, sdtk_file)
         os.rename(unmapped_sdtk, sdtk_dest_path)
 
+        # Move related files in the folders from sdtk_unmapped_folder_dict
+        for folder_dict in sdtk_unmapped_folder_dict:
+            folder_name = folder_dict['folder']
+            file_format = folder_dict['format']
+            is_complete = folder_dict['complete']
+
+            orig_folder = os.path.join(DATASET_ROOT, game, folder_name)
+            dest_folder = os.path.join(UNMAPPED_DATSET_ROOT, game, folder_name)
+
+            file_name = sdtk_file.split('.')[0]+file_format
+            orig_path = os.path.join(orig_folder, file_name)
+            dest_path = os.path.join(dest_folder, file_name)
+
+            # in case we are not expecting that every soudntrack have a corresponding
+            # file of this type, we have to test if the file exists
+            if not is_complete:
+                if not os.path.exists(orig_path):
+                    continue
+
+            if not os.path.exists(dest_folder):
+                os.makedirs(dest_folder)
+            os.rename(orig_path, dest_path)
+
 def move_unmapped_videos(unmapped_videos:list[str]):
     """
         Move unmapped videos, textual descriptions and csv entries to unmapped dataset 
@@ -199,16 +261,29 @@ def move_unmapped_videos(unmapped_videos:list[str]):
         vid_dest_path = os.path.join(vid_dest_folder, video_file)
         os.rename(unmapped_video, vid_dest_path)
 
-        # Move video description file
-        desc_orig_folder = os.path.join(DATASET_ROOT, game, 'videos_descriptions')
-        desc_dest_folder = os.path.join(UNMAPPED_DATSET_ROOT, game, 'videos_descriptions')
-        if not os.path.exists(desc_dest_folder):
-            os.makedirs(desc_dest_folder)
+        # Move related files in the folders from video_unmapped_misc
+        for folder_dict in video_unmapped_folder_dict:
+            folder_name = folder_dict['folder']
+            file_format = folder_dict['format']
+            is_complete = folder_dict['complete']
 
-        desc_file = video_file.split('.')[0]+'.txt'
-        desc_orig_path = os.path.join(desc_orig_folder, desc_file)
-        desc_dest_path = os.path.join(desc_dest_folder, desc_file)
-        os.rename(desc_orig_path, desc_dest_path)
+            orig_folder = os.path.join(DATASET_ROOT, game, folder_name)
+            dest_folder = os.path.join(UNMAPPED_DATSET_ROOT, game, folder_name)
+
+            file_name = video_file.split('.')[0]+file_format
+            orig_path = os.path.join(orig_folder, file_name)
+            dest_path = os.path.join(dest_folder, file_name)
+
+            # in case we are not expecting that every video have a corresponding
+            # file of this type, we have to test if the file exists
+            if not is_complete:
+                if not os.path.exists(orig_path):
+                    continue
+
+            if not os.path.exists(dest_folder):
+                os.makedirs(dest_folder)
+
+            os.rename(orig_path, dest_path)
 
         # Move csv entries
         mapping_file = 'mapping_log.csv'
@@ -228,6 +303,21 @@ def move_unmapped_videos(unmapped_videos:list[str]):
             dest_mapping_df = pd.read_csv(mapping_dest_path)
             dest_mapping_df = pd.concat([dest_mapping_df, mapping_df_entry], ignore_index=True)
             dest_mapping_df.to_csv(mapping_dest_path, index=False)
+
+def count_unmapped_videos(videos_path) -> int:
+    cnt = 0
+    for vid_or_folder in sorted(os.listdir(videos_path)): # game/videos
+        video_or_folder_path = os.path.join(videos_path, vid_or_folder)
+
+        if not os.path.isdir(video_or_folder_path):
+            cnt += 1
+            continue
+
+        folder_path = video_or_folder_path
+        for _ in os.listdir(folder_path): # game/videos/soundtrack
+            cnt += 1
+
+    return cnt
 
 def main(base_dir):
     gb_cnt_ump_s = 0 # global count unmapped soundtracks
@@ -249,6 +339,9 @@ def main(base_dir):
 
         if cnt_ump_s == cnt_total_s:
             tqdm.write(f"################ GAME {game} HAVE NO MAPPED SOUNTRACKS {cnt_ump_s} unmapped ###################")
+            cnt_ump_v = count_unmapped_videos(videos_path)
+            gb_cnt_ump_v += cnt_ump_v
+            gb_cnt_total_v += cnt_ump_v
 
             if not DRY_RUN:
                 tqdm.write(f"################ MOVING THE WHOLE GAME {game} ###################\n")
