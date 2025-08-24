@@ -15,4 +15,9 @@ test_dataset/
 
 13. CLAP/imgs
 
+14. Baselines/GVMGen/checkpoints
+14. Baselines/GVMGen/dataset/snes_mvdb
+14. Baselines/GVMGen/dataset/snes_mvdb_jsonl
+14. Baselines/GVMGen/dataset/vgmgen
+
 *__pycache__

@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='get_videos_info.py')
-    parser.add_argument("--dataset_root", type=str, default="/app/dataset/", help="path for the dataset games folder")
+    parser.add_argument("--dataset_root", type=str, default="/home/es119256/dados/datasets/vmdb_3/", help="path for the dataset games folder")
     parser.add_argument("--console", type=str, default="nintendo-snes-spc", help="selected console")
     args = parser.parse_args()
 

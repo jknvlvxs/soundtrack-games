@@ -4,9 +4,9 @@ import ffmpeg
 import pandas as pd
 from tqdm import tqdm
 
-#DATASET_ROOT = "/app/dataset/nintendo-snes-spc"
+DATASET_ROOT = "/home/es119256/dados/datasets/vmdb_3/nintendo-snes-spc"
 #DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/mock"
-DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/unity_tests/move_unmapped"
+#DATASET_ROOT = "/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/unity_tests/move_unmapped"
 UNMAPPED_DATSET_ROOT = f"{DATASET_ROOT}-unmapped"
 
 MIN_SOUNDTRACK_SIZE = 8
@@ -27,12 +27,12 @@ video_unmapped_folder_dict = [
     {
         'folder': 'videos_descriptions',
         'format': '.txt',
-        'complete': True
+        'complete': False
     },
     {
         'folder': 'videos_descriptions_mg',
         'format': '.txt',
-        'complete': True
+        'complete': False
     },
     {
         'folder': 'descs_sums_mg',
@@ -330,6 +330,19 @@ def main(base_dir):
         game_path = os.path.join(base_dir, game)
         videos_path = os.path.join(game_path, "videos")
         soundtracks_path = os.path.join(game_path, "soundtracks")
+        unmapped_game_path = os.path.join(UNMAPPED_DATSET_ROOT, game)
+        mapping_orig_path = os.path.join(DATASET_ROOT, game, 'mapping_log.csv')
+
+        if os.path.exists(unmapped_game_path):
+            tqdm.write(f"SKIPING {game}")
+            continue
+
+        if not os.path.exists(mapping_orig_path):
+            if not DRY_RUN:
+                tqdm.write(f"################ MOVING THE WHOLE GAME {game}: There is no mapping_log.csv ###################\n")
+                os.rename(game_path, unmapped_game_path)
+                unmapped_games.append(game)
+                continue
 
         # Get Soundtracks
         unmapped_sdtks, cnt_ump_s, cnt_total_s = get_sdtks_to_unmap(soundtracks_path, videos_path)
@@ -344,9 +357,8 @@ def main(base_dir):
             gb_cnt_total_v += cnt_ump_v
 
             if not DRY_RUN:
-                tqdm.write(f"################ MOVING THE WHOLE GAME {game} ###################\n")
-                tgt_game_path = os.path.join(UNMAPPED_DATSET_ROOT, game)
-                os.rename(game_path, tgt_game_path)
+                tqdm.write(f"################ MOVING THE WHOLE GAME {game}: No mapped soundtracks ###################\n")
+                os.rename(game_path, unmapped_game_path)
                 unmapped_games.append(game)
                 continue
 
@@ -362,9 +374,8 @@ def main(base_dir):
             tqdm.write(f"################ GAME {game} HAVE NO MAPPED VIDEOS {cnt_ump_v} unmapped ###################\n")
 
             if not DRY_RUN:
-                tqdm.write(f"################ MOVING THE WHOLE GAME {game} ###################\n") # belive me, this case exists
-                tgt_game_path = os.path.join(UNMAPPED_DATSET_ROOT, game)
-                os.rename(game_path, tgt_game_path)
+                tqdm.write(f"################ MOVING THE WHOLE GAME {game}: No mapped videos ###################\n") # belive me, this case exists
+                os.rename(game_path, unmapped_game_path)
                 unmapped_games.append(game)
                 continue
 

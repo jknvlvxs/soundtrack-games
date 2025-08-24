@@ -12,7 +12,7 @@ import ffmpeg
 
 SPLIT_TXTS = "../11. Split dataset/3. split/splits"
 VIDEOS_CSV = "../11. Split dataset/2. downsample/videos_info.csv"
-GENRES_CSV = "/app/dataset/deepseek_genres.csv"
+GENRES_CSV = "../11. Split dataset/1. get_videos_info/deepseek_genres.csv"
 GENRES = ["Platform", "Sports", "RPG", "Fighting", "Action", "Shooters", "Puzzle", "Strategy", "Racing", "Simulation", "Adventure"]
 
 def get_splits_games() -> dict[str, list[str]]:
@@ -34,7 +34,6 @@ def get_splits_games() -> dict[str, list[str]]:
 
     return split_games
 
- 
 def select_n_rand_games_for_splits(split_dict:dict[str, list[str]], n:int=-1, splits:list[str]=['eval', 'test']):
     """
         Selects `n` games for each genre for each of the `splits` according to the `split_dict`
@@ -57,10 +56,10 @@ def select_n_rand_games_for_splits(split_dict:dict[str, list[str]], n:int=-1, sp
 
         # Draw n games for each genre, 
         for genre in GENRES:
-            genres_series = genres_df['game_genre']
+            genres_series = genres_df['genre']
             genre_specific_df = genres_df[genres_series == genre]
 
-            genre_specific_games = genre_specific_df['game_folder'].to_numpy()
+            genre_specific_games = genre_specific_df['game_id'].to_numpy()
             genre_specific_games = [game for game in genre_specific_games if game in split_games]
 
             if n > 0 and len(genre_specific_games) > n:
@@ -131,7 +130,7 @@ def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd
 
         # Oringinal paths
         segment_orig_path = os.path.join(dataset_root, game, 'videos', soundtrack, segment)
-        description_orig_path = os.path.join(dataset_root, game, 'videos_descriptions', segment[:-3]+'txt')
+        description_orig_path = os.path.join(dataset_root, game, 'descs_sums_mg', segment[:-3]+'txt')
 
         # Read description
         with open(description_orig_path, 'r') as f:
@@ -164,11 +163,11 @@ def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='1. dataset_structure.py')
-    parser.add_argument('--original_dataset', type=str, default="/app/dataset/nintendo-snes-spc", help="path for the snes mvdb dataset games folder")
-    parser.add_argument('--converted_dataset', type=str, default="/app/code/dataset", help="path to audiocraft/dataset where the converted dataset will be")
+    parser.add_argument('--original_dataset', type=str, default="/home/es119256/dados/datasets/vmdb_3/nintendo-snes-spc", help="path for the snes mvdb dataset games folder")
+    parser.add_argument('--converted_dataset', type=str, default="/home/es119256/dados/repos/visual-bardo/dataset", help="path to audiocraft/dataset where the converted dataset will be")
     parser.add_argument('--selection_splits', type=str, default="eval, test", help="splits (train, eval, test) to apply selecion of games_per_genre and examples_per_genre")
     parser.add_argument('--games_per_genre', type=int, default=-1, help="number of games to randomly select for each genre for selection_splits splits")
-    parser.add_argument('--examples_per_sdtk', type=int, default=1, help="number of exmaples for each soundtrack of each game selected according to games_per_genre")
+    parser.add_argument('--examples_per_sdtk', type=int, default=10_000_000, help="number of exmaples for each soundtrack of each game selected according to games_per_genre")
 
     args = parser.parse_args()
     original_dataset:str = args.original_dataset
