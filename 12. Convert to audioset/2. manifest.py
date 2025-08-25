@@ -61,8 +61,8 @@ def write_jsonl(manifest_jsons:list[dict[str, any]], manifest_path:str):
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='2. manifest.py')
-    parser.add_argument('--egs_path', type=str, default="/app/code/egs", help="path to audiocraft/egs")
-    parser.add_argument('--converted_dataset', type=str, default="/app/code/dataset", help="path to audiocraft/dataset. snes_mvdb will be added to access the converted dataset")
+    parser.add_argument('--egs_path', type=str, default="/home/es119256/dados/repos/visual-bardo/egs", help="path to audiocraft/egs")
+    parser.add_argument('--converted_dataset', type=str, default="/home/es119256/dados/repos/visual-bardo/dataset", help="path to audiocraft/dataset. snes_mvdb will be added to access the converted dataset")
 
     args = parser.parse_args()
     egs_path = os.path.join(args.egs_path, 'snes_mvdb')
