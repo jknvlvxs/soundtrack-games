@@ -50,7 +50,7 @@ def convert_to_gvmgen(file_path:str, snes_split:str, gvmgen_split:str, v_tensor_
         "sample_rate": file_dict['sample_rate'],
         "file_extension": "mp3",
         "visual_content": video_tensor_path,
-        "description": "",
+        "description": file_dict['description'],
         "keywords": "",
         "duration": file_dict['duration'],
         "bpm": "",
@@ -121,24 +121,14 @@ def collect_jsons(splits, snes_mvdb_folder, gvmgen_folder, gvmgen_jsonl_folder, 
             if not os.path.exists(split_folder):
                 os.makedirs(split_folder)
 
-        split_files = os.listdir(snes_mvdb_split_folder)[:10]
-        tqdm.write(f"SPLIT {split} WILL GET {len(split_files)} FILES")
+        split_files = os.listdir(snes_mvdb_split_folder)
+        tqdm.write(f"SPLIT {split} WILL GET {len(split_files)} FILES (counting the mp3s)")
+
         for file in sorted(split_files):
             if is_mp3(file):
                 continue
 
             file_path = os.path.join(snes_mvdb_split_folder, file)
-
-            with open(file_path, 'r') as f:
-                file_dict = json.load(f)
-            video_name = file_dict['video']
-            video_name = video_name.split('/')[-1].split('.')[0]
-            video_tensor_path = os.path.join(video_tensors_split_folder, video_name + ".pt")
-
-            if os.path.exists(video_tensor_path):
-                tqdm.write(f"SKIPPING {split}: {file}")
-                continue
-
             jsons_data.append(
                 {
                     'json_path': file_path,

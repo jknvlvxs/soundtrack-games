@@ -534,7 +534,6 @@ class CLIPConditioner(VideoConditioner):
                 videos["video"].append(video)
                 videos['attention_mask'].append(1)
             else:
-                print("CLIP CONDITIONER TOKENIZE EMPTY VIDEO")
                 if self.training:
                     video = torch.zeros(self.video_len, 3, 336, 336).to(self.device)
                 else:

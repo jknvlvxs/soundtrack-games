@@ -6,7 +6,7 @@
 """Metrics like CLAP score, FAD, KLD, Visqol, Chroma similarity, etc.
 """
 # flake8: noqa
-# from .clap_consistency import CLAPTextConsistencyMetric, TextConsistencyMetric
+from .clap_consistency import CLAPTextConsistencyMetric, TextConsistencyMetric
 from .chroma_cosinesim import ChromaCosineSimilarityMetric
 from .fad import FrechetAudioDistanceMetric
 from .kld import KLDivergenceMetric, PasstKLDivergenceMetric

@@ -37,6 +37,7 @@ RUN /root/miniconda3/bin/pip install -r requirements.txt && \
 # --volume "/home/es119256/vmdb/14. Baselines/GVMGen":/app/code \
 # --volume /home/es119256/dados/datasets/vmdb:/app/dataset \
 # --volume /home/es119256/dados/xps:/app/xps \
+# --shm-size=6gb \
 # gvm_gen
 
 # docker exec -it gvm_gen sh
