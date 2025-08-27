@@ -64,6 +64,12 @@ python load_model.py --checkpoint_path path/to/your_checkpoint --output_path pat
 python test.py --model_path ./checkpoints/state_dict.bin --video_path test.mp4 --syn_path output --fps 1 --duration 30
 ```
 
+* If you just want to directly run inference on the available the [available model weights](https://drive.google.com/drive/folders/1OKVQlz7TPKEGTPEK-BiH1tJ3FYT11GON?usp=sharing), they are already in the format expected by text.py and you can just point to the folder containing it.
+
+```
+python test.py --model_path ./checkpoints/ --video_path test.mp4 --syn_path output_folder --fps 1 --duration 30
+```
+
 ### 6. Evaluation Model
 
 Please refer to ```./evaluation_model``` folder.

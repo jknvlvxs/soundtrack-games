@@ -62,14 +62,14 @@ def export_lm(checkpoint_path: tp.Union[Path, str], out_file: tp.Union[Path, str
     """Export only the best state from the given GVMGen checkpoint.
     """
     pkg = torch.load(checkpoint_path, 'cpu')
-    if pkg['fsdp_best_state']:
+    if pkg.get('fsdp_best_state', None):
         best_state = pkg['fsdp_best_state']['model']
     else:
         assert pkg['best_state']
-        best_state = pkg['best_state']['model']
+        best_state = pkg['best_state']
     new_pkg = {
         'best_state': best_state,
-        'xp.cfg': OmegaConf.to_yaml(pkg['xp.cfg']),
+        'xp.cfg': pkg['xp.cfg'],
         # 'version': __version__,
         'exported': True,
     }

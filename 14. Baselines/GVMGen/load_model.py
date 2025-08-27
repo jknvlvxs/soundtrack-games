@@ -7,7 +7,7 @@ import argparse
 def load_checkpoint(checkpoint_path):
     assert os.path.isfile(checkpoint_path)
     checkpoint_dict = torch.load(checkpoint_path, map_location="cpu")
-    print(checkpoint_dict)
+    print(checkpoint_dict['xp.cfg'])
 
 def main():
     parser = argparse.ArgumentParser(description='Script for processing video and model paths.')
@@ -18,4 +18,8 @@ def main():
                         help='Path to the output.')
     args = parser.parse_args()
     
+    #load_checkpoint(args.checkpoint_path)
     export.export_lm(args.checkpoint_path, args.output_path)
+
+if __name__ == "__main__":
+    main()

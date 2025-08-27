@@ -508,6 +508,15 @@ class CLIPConditioner(VideoConditioner):
         else:
             self.__dict__['clip'] = clip_model.to(device)
 
+    def force_video_len(self, video:torch.Tensor):
+        T, C, H, W = video.shape
+        gap = self.video_len - T
+        if gap > 0:
+            last_image = video[-T].unsqueeze(0)
+            for _ in range(gap):
+                video = torch.cat((video, last_image), dim=0)
+        return video
+
     def tokenize(self, x: tp.List[tp.Optional[str]]) -> tp.Dict[str, torch.Tensor]:
         # video_len: video total seconds
         # if current sample doesn't have a certain attribute, replace with empty string
@@ -519,9 +528,13 @@ class CLIPConditioner(VideoConditioner):
                     video = torch.load(v).to(self.device)
                 else:
                     video = v.to(self.device)
+
+                video = self.force_video_len(video)
+
                 videos["video"].append(video)
                 videos['attention_mask'].append(1)
             else:
+                print("CLIP CONDITIONER TOKENIZE EMPTY VIDEO")
                 if self.training:
                     video = torch.zeros(self.video_len, 3, 336, 336).to(self.device)
                 else:

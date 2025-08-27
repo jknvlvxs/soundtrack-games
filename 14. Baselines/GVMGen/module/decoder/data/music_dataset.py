@@ -223,12 +223,13 @@ class MusicDataset(InfoAudioDataset):
     def __getitem__(self, index):
         wav, info = super().__getitem__(index)
         info_data = info.to_dict()
-        music_info_path = Path(info.meta.path).with_suffix('.json')
+        music_info_path = Path(info.meta.json_path)
 
         if Path(music_info_path).exists():
             with open(music_info_path, 'r') as json_file:
                 music_data = json.load(json_file)
                 music_data.update(info_data)
+
                 music_info = MusicInfo.from_dict(music_data, fields_required=self.info_fields_required)
             if self.paraphraser is not None:
                 music_info.description = self.paraphraser.sample(music_info.meta.path, music_info.description)

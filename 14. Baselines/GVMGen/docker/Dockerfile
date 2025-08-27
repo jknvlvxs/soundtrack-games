@@ -35,7 +35,7 @@ RUN /root/miniconda3/bin/pip install -r requirements.txt && \
 # -it \
 # --name gvm_gen \
 # --volume "/home/es119256/vmdb/14. Baselines/GVMGen":/app/code \
-# --volume /home/es119256/dados/datasets/vmdb_2:/app/dataset \
+# --volume /home/es119256/dados/datasets/vmdb:/app/dataset \
 # --volume /home/es119256/dados/xps:/app/xps \
 # gvm_gen
 

@@ -60,12 +60,16 @@ class BaseInfo:
 @dataclass(order=True)
 class AudioMeta(BaseInfo):
     path: str
+    json_path: tp.Optional[str]
     duration: float
     sample_rate: int
     amplitude: tp.Optional[float] = None
     weight: tp.Optional[float] = None
     # info_path is used to load additional information about the audio file that is stored in zip files.
     info_path: tp.Optional[PathInZip] = None
+
+    def __repr__(self):
+        return  f"AudioMeta(path='{self.path}', json_path='{self.json_path}', duration={self.duration}, sample_rate={self.sample_rate}, amplitude={self.amplitude}, weight={self.weight}, info_path={self.info_path})"
 
     @classmethod
     def from_dict(cls, dictionary: dict):
@@ -112,7 +116,7 @@ def _get_audio_meta(file_path: str, minimal: bool = True) -> AudioMeta:
     if not minimal:
         wav, sr = audio_read(file_path)
         amplitude = wav.abs().max().item()
-    return AudioMeta(file_path, info.duration, info.sample_rate, amplitude)
+    return AudioMeta(file_path, None, info.duration, info.sample_rate, amplitude)
 
 
 def _resolve_audio_meta(m: AudioMeta, fast: bool = True) -> AudioMeta:
