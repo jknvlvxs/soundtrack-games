@@ -205,12 +205,17 @@ def find_audio_files(path: tp.Union[Path, str],
     return meta
 
 
-def load_audio_meta(path: tp.Union[str, Path],
-                    resolve: bool = True, fast: bool = True) -> tp.List[AudioMeta]:
+def load_audio_meta(
+        path: tp.Union[str, Path],
+        kld_or_fad: bool = False,
+        resolve: bool = True, 
+        fast: bool = True
+    ) -> tp.List[AudioMeta]:
     """Load list of AudioMeta from an optionally compressed json file.
 
     Args:
         path (str or Path): Path to JSON file.
+        kld_or_fad (bool): If running KLD or FAD metrics, we need to get only one instance of the same audio.
         resolve (bool): Whether to resolve the path from AudioMeta (default=True).
         fast (bool): activates some tricks to make things faster.
     Returns:
@@ -220,12 +225,21 @@ def load_audio_meta(path: tp.Union[str, Path],
     with open_fn(path, 'rb') as fp:  # type: ignore
         lines = fp.readlines()
     meta = []
+    last_mp3 = ''
     for line in lines:
         d = json.loads(line)
+
+        if kld_or_fad:
+            if last_mp3 == d['path']:
+                continue
+            else:
+                last_mp3 = d['path']
+
         m = AudioMeta.from_dict(d)
         if resolve:
             m = _resolve_audio_meta(m, fast=fast)
         meta.append(m)
+
     return meta
 
 
@@ -278,6 +292,8 @@ class AudioDataset:
         sample_on_weight (bool): Set to `True` to sample segments using the `weight` entry of
             `AudioMeta`. If `sample_on_duration` is also True, the actual weight will be the product
             of the file duration and file weight. This is only used if `segment_duration` is provided.
+        disable_sampling (bool): Set to `True` to just follow the dataloader index on the __getitem__ method
+            That is, when this option is `True`, it disables the sample_file method.
         min_segment_ratio (float): Minimum segment ratio to use when the audio file
             is shorter than the desired segment.
         max_read_retry (int): Maximum number of retries to sample an audio segment from the dataset.
@@ -306,6 +322,7 @@ class AudioDataset:
                  pad: bool = True,
                  sample_on_duration: bool = True,
                  sample_on_weight: bool = True,
+                 disable_sampling: bool = False,
                  min_segment_ratio: float = 0.5,
                  max_read_retry: int = 10,
                  return_info: bool = False,
@@ -336,6 +353,7 @@ class AudioDataset:
         self.channels = channels
         self.pad = pad
         self.sample_on_weight = sample_on_weight
+        self.disable_sampling = disable_sampling
         self.sample_on_duration = sample_on_duration
         self.sampling_probabilities = self._get_sampling_probabilities()
         self.max_read_retry = max_read_retry
@@ -388,6 +406,10 @@ class AudioDataset:
         You must use the provided random number generator `rng` for reproducibility.
         You can further make use of the index accessed.
         """
+        if self.disable_sampling:
+            print(f"$$$$$ sampling disabled, index:{index}")
+            return self.meta[index]
+
         if self.permutation_on_files:
             assert self.current_epoch is not None
             total_index = self.current_epoch * len(self) + index
@@ -525,7 +547,7 @@ class AudioDataset:
         return meta
 
     @classmethod
-    def from_meta(cls, root: tp.Union[str, Path], **kwargs):
+    def from_meta(cls, root: tp.Union[str, Path], split, **kwargs):
         """Instantiate AudioDataset from a path to a directory containing a manifest as a jsonl file.
 
         Args:
@@ -541,7 +563,13 @@ class AudioDataset:
             else:
                 raise ValueError("Don't know where to read metadata from in the dir. "
                                  "Expecting either a data.jsonl or data.jsonl.gz file but none found.")
-        meta = load_audio_meta(root)
+        meta = load_audio_meta(root, kwargs['kld_or_fad'])
+
+        if split in ['valid', 'evaluate'] and kwargs['num_samples'] > len(meta):
+            kwargs['num_samples'] = len(meta)
+
+        del kwargs['kld_or_fad']
+
         return cls(meta, **kwargs)
 
     @classmethod

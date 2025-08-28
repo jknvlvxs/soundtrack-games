@@ -32,9 +32,12 @@ dataset:
   min_segment_ratio: 0.8  # lower values such as 0.5 result in generations with a lot of silence.
   return_info: true
   train:
-    num_samples: 100000 # need a randomly large number here for AudioDataset
+    num_samples: 1000000000 # need a randomly large number here for AudioDataset
   valid:
-    num_samples: 10000
+    num_samples: 1000000000
+  evaluate:
+    num_samples: 1000000000
+    disable_sampling: true
   generate:
     num_samples: 10
 

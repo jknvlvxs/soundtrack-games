@@ -254,6 +254,14 @@ def get_audio_datasets(cfg: omegaconf.DictConfig,
         kwargs['sample_rate'] = sample_rate
         kwargs['channels'] = channels
 
+        kld_or_fad =  cfg.evaluate.metrics.kld or cfg.evaluate.metrics.fad
+        if cfg.evaluate.metrics.text_consistency and kld_or_fad:
+            raise ValueError("Can't evaluate Text Consistency along with FAD or KLD. FAD and KLD can only see the same audio one, while Text Consistency see it many times with different video descriptions") 
+        if kld_or_fad:
+            print(" ------------> Testing KLD or FAD: Only the first instance of each MP3 will be used <------------ ")
+
+        kwargs['kld_or_fad'] = kld_or_fad
+
         if kwargs.get('permutation_on_files') and cfg.optim.updates_per_epoch:
             kwargs['num_samples'] = (
                 flashy.distrib.world_size() * cfg.dataset.batch_size * cfg.optim.updates_per_epoch)
@@ -268,11 +276,16 @@ def get_audio_datasets(cfg: omegaconf.DictConfig,
         if dataset_type == DatasetType.MUSIC:
             dataset = data.music_dataset.MusicDataset.from_meta(path, **kwargs)
         elif dataset_type == DatasetType.SOUND:
-            dataset = data.sound_dataset.SoundDataset.from_meta(path, **kwargs)
+            dataset = data.sound_dataset.SoundDataset.from_meta(path, split, **kwargs)
         elif dataset_type == DatasetType.AUDIO:
             dataset = data.info_audio_dataset.InfoAudioDataset.from_meta(path, return_info=return_info, **kwargs)
         else:
             raise ValueError(f"Dataset type is unsupported: {dataset_type}")
+        
+        if split in ['valid', 'evaluate'] and num_samples > len(dataset):
+            num_samples = len(dataset)
+        print(f"--------------------------> num_samples: {num_samples}; len(dataset): {len(dataset)}")
+
         loader = get_loader(
             dataset,
             num_samples,

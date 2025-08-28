@@ -528,7 +528,7 @@ class CLIPConditioner(VideoConditioner):
                     video = torch.load(v).to(self.device)
                 else:
                     video = v.to(self.device)
-
+                print
                 video = self.force_video_len(video)
 
                 videos["video"].append(video)
