@@ -407,7 +407,6 @@ class AudioDataset:
         You can further make use of the index accessed.
         """
         if self.disable_sampling:
-            print(f"$$$$$ sampling disabled, index:{index}")
             return self.meta[index]
 
         if self.permutation_on_files:

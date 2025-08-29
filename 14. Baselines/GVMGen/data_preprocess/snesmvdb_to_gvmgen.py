@@ -23,9 +23,9 @@ def is_mp3(file:str):
     extension = file.split('.')[-1]
     return extension == 'mp3'
 
-def save_video_tensor(video_file:str, v_tensor_split:str) -> str:
+def save_video_tensor(video_file:str, v_tensor_folder:str) -> str:
     name = video_file.split('/')[-1].split('.')[0]
-    video_tensor_path = os.path.join(v_tensor_split, name + ".pt")
+    video_tensor_path = os.path.join(v_tensor_folder, name + ".pt")
     
     if not os.path.exists(video_tensor_path):
         video = capture_video(video_file, FPS, 'cuda', V_DURATION)
@@ -33,8 +33,8 @@ def save_video_tensor(video_file:str, v_tensor_split:str) -> str:
     
     return video_tensor_path
 
-def convert_to_gvmgen(file_path:str, snes_split:str, gvmgen_split:str, v_tensor_split:str) -> tuple[str, dict]:
-    #tqdm.write(f"convert_to_gvmgen:\nfile_path:{file_path}\nsnes_split: {snes_split}\ngvmgen_split:{gvmgen_split}\v_tensor_split:{v_tensor_split}")
+def convert_to_gvmgen(file_path:str, snes_split:str, gvmgen_split:str, v_tensor_folder:str) -> tuple[str, dict]:
+    #tqdm.write(f"convert_to_gvmgen:\nfile_path:{file_path}\nsnes_split: {snes_split}\ngvmgen_split:{gvmgen_split}\v_tensor_folder:{v_tensor_folder}")
 
     with open(file_path, 'r') as f:
         file_dict = json.load(f)
@@ -42,7 +42,7 @@ def convert_to_gvmgen(file_path:str, snes_split:str, gvmgen_split:str, v_tensor_
     mp3_name = file_dict['name']
     mp3_path = os.path.join(snes_split, mp3_name)
     video_path = file_dict['video']
-    video_tensor_path = save_video_tensor(video_path, v_tensor_split)
+    video_tensor_path = save_video_tensor(video_path, v_tensor_folder)
 
     entry = {
         "key": "",
@@ -99,7 +99,7 @@ def covnert_and_generate_json(process: tuple[int, list[dict[str, str]]]):
             json_data['json_path'], 
             json_data['snes_mvdb_split_folder'], 
             json_data['gvmgen_split_folder'],
-            json_data['video_tensors_split_folder']
+            json_data['video_tensors_folder']
         )
         gen_jsonl(entry, json_data['gvmgen_jsonl_split_folder'])
 
@@ -114,9 +114,9 @@ def collect_jsons(splits, snes_mvdb_folder, gvmgen_folder, gvmgen_jsonl_folder, 
         snes_mvdb_split_folder = os.path.join(snes_mvdb_folder, split)
         gvmgen_split_folder = os.path.join(gvmgen_folder, split)
         gvmgen_jsonl_split_folder = os.path.join(gvmgen_jsonl_folder, split)
-        video_tensors_split_folder = os.path.join(video_tensors_folder, split)
+        #video_tensors_split_folder = os.path.join(video_tensors_folder, split)
 
-        split_folders = [gvmgen_split_folder, gvmgen_jsonl_split_folder, video_tensors_split_folder]
+        split_folders = [gvmgen_split_folder, gvmgen_jsonl_split_folder]
         for split_folder in split_folders:
             if not os.path.exists(split_folder):
                 os.makedirs(split_folder)
@@ -135,7 +135,7 @@ def collect_jsons(splits, snes_mvdb_folder, gvmgen_folder, gvmgen_jsonl_folder, 
                     'snes_mvdb_split_folder': snes_mvdb_split_folder,
                     'gvmgen_split_folder': gvmgen_split_folder,
                     'gvmgen_jsonl_split_folder': gvmgen_jsonl_split_folder,
-                    'video_tensors_split_folder': video_tensors_split_folder
+                    'video_tensors_folder': video_tensors_folder
                 }
             )
 
