@@ -23,6 +23,7 @@ import wget
 import tempfile
 import copy
 from contextlib import suppress
+from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Set, Tuple
 
 from clap_module.utils import get_tar_path_from_dataset_name, dataset_split
 from clap_module.utils import load_p, load_class_label
@@ -244,6 +245,137 @@ class ToyDataset(Dataset):
             "longer": longer,
             "mel_fusion": mel_spec
         }
+        return data_dict
+
+    def __len__(self):
+        return self.total_size
+
+class SNESDataset(Dataset):
+    def __init__(self, samples_paths, config, eval_mode=False):
+        """Toy Dataset for testing the audioset input with text labels
+        Parameters
+        ----------
+            samples_paths: str
+                path to the jsons files in the dataset
+            config: dict
+                the audio cfg file
+           eval_model (bool): to indicate if the dataset is a testing dataset
+        """
+        self.samples_paths = samples_paths
+        self.total_size = len(self.samples_paths)
+
+        self.audio_cfg = config["audio_cfg"]
+        self.text_cfg = config["text_cfg"]
+        self.classes_num = self.audio_cfg["class_num"]
+
+        self.eval_mode = eval_mode
+
+        logging.info("total dataset size: %d" % (self.total_size))
+        logging.info("class num: %d" % (self.classes_num))
+
+    def time_shifting(self, x):
+        frame_num = len(x)
+        shift_len = random.randint(0, frame_num - 1)
+        new_sample = np.concatenate([x[shift_len:], x[:shift_len]], axis=0)
+        return new_sample
+
+    def crop_wav(self, x):
+        crop_size = self.audio_cfg["crop_size"]
+        crop_pos = random.randint(0, len(x) - crop_size - 1)
+        return x[crop_pos: crop_pos + crop_size]
+
+    def prompt_text(self, target:str):
+        text = tokenizer(target)
+        #print(f"\n\n TOKENIZED TEXT {text} \n\n")
+        return text
+
+    @staticmethod
+    def mono_and_resample(audio:torch.Tensor, orig_freq:int, new_freq:int):
+        audio = torch.mean(audio, dim=0, keepdim=True)
+
+        resample = torchaudio.transforms.Resample(orig_freq=orig_freq, new_freq=new_freq)
+        audio = resample(audio)
+
+        return audio
+
+    @staticmethod
+    def sample_secs(audio:torch.Tensor, sr:int, secs:int=30) -> torch.Tensor:
+        channels, sample_points = audio.shape
+        max_starting_point = sample_points - secs*sr
+        rand_starting_point = 0
+        audio_length = secs*sr
+
+        if max_starting_point > 0:
+            rand_starting_point = torch.randint(0, max_starting_point, (1,)).tolist()[0]
+            audio = audio[:, rand_starting_point : rand_starting_point+audio_length]
+            return audio
+
+        padd = max_starting_point*-1
+        pad_left = torch.randint(0, padd, (1,)).tolist()[0]
+        pad_right = padd - pad_left
+
+        padded_audio = torch.zeros((channels, secs*sr))
+        padded_audio[:, pad_left : -pad_right] = audio
+
+        return padded_audio
+
+    def __getitem__(self, index):
+        """Load waveform, text, and target of an audio clip
+
+        Parameters
+        ----------
+            index: int
+                the index number
+        Return
+        ------
+            output: dict {
+                "sample_path": str,
+                "audio_path": int,
+                "waveform": Tensor? # list (audio_length,),
+                "target": list (class_num, ),
+                "text": torch.tensor (context_length,)
+            }
+                the output dictionary
+        """
+        sample_path = self.samples_paths[index]
+
+        with open(sample_path, 'r') as json_file:
+            raw_sample = json.load(json_file)
+
+        text = raw_sample["description"]
+        text = self.prompt_text(text)
+
+        sampler_pardir = os.path.abspath(os.path.join(sample_path, os.pardir))
+        audio_path = os.path.join(sampler_pardir, raw_sample["name"])
+
+        waveform, sr = torchaudio.load(audio_path)
+        #TODO Really need to be mono ?
+        waveform = self.mono_and_resample(waveform, sr, self.audio_cfg["sample_rate"])
+
+        max_len_secs = self.audio_cfg["clip_samples"] // self.audio_cfg["sample_rate"]
+        waveform = self.sample_secs(waveform, self.audio_cfg["sample_rate"], max_len_secs)
+        waveform = waveform.squeeze()
+
+        assert (
+                len(waveform) == self.audio_cfg["clip_samples"]
+        ), "The sample length is not match"
+
+        mel_spec = get_mel(waveform, self.audio_cfg)[None, :, :]
+        mel_spec = torch.cat([mel_spec, mel_spec.clone(), mel_spec.clone(), mel_spec.clone()], dim=0).cpu().numpy()
+        longer = random.choice([True, False])
+        if longer == False:
+            mel_spec[1:, :, :] = 0.0
+
+        data_dict = {
+            "sample_path": sample_path,
+            "audio_path": audio_path,
+            "waveform": waveform,
+            "text": text,
+            "longer": longer,
+            "mel_fusion": mel_spec,
+            "__url__": "all"
+        }
+
         return data_dict
 
     def __len__(self):
@@ -575,9 +707,15 @@ def preprocess_single(
         sample["class_label"] = torch.tensor(class_labels).float()
 
     del sample[text_ext]
-    sample["audio_name"] = sample["__key__"].split("/")[-1] + "." + audio_ext
-    sample["text_name"] = sample["__key__"].split("/")[-1] + "." + text_ext
+
+    if sample.get("audio_name") == None:
+        sample["audio_name"] = sample["__key__"].split("/")[-1] + "." + audio_ext
+    
+    if sample.get("text_name") == None:
+        sample["text_name"] = sample["__key__"].split("/")[-1] + "." + text_ext
+    
     sample["audio_orig_sr"] = orig_sr
+    
     return sample
 
 
@@ -625,6 +763,55 @@ def collate_fn_with_preprocess(batch,
     del data_preprocessed
     return batch_dict
 
+def get_mvdb_samples(split_path):
+    samples = []
+
+    for file in os.listdir(split_path):
+        if file.endswith('.mp3'):
+            continue
+        file_path = os.path.join(split_path, file)
+        samples.append(file_path)
+
+    return samples
+
+def get_mvdb_dataset(
+        args,
+        model_cfg,
+        is_train,
+        is_local=None,
+):
+    """
+    Get a dataset for wdsdataloader in the snes mvdb dataset.
+    """
+    if is_local is None and (not args.remotedata is None):
+        is_local = not args.remotedata
+    
+    split_path = args.train_data if is_train else args.val_data
+    assert split_path is not None
+
+    samples_paths = get_mvdb_samples(split_path)
+
+    dataset = SNESDataset(samples_paths, model_cfg, is_train)
+
+    num_samples = len(dataset)
+    sampler = (
+        DistributedSampler(dataset, shuffle=is_train)
+        if args.distributed and is_train
+        else None
+    )
+
+    dataloader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.workers,
+        sampler=sampler,
+        drop_last=is_train,
+    )
+    dataloader.num_samples = num_samples
+    dataloader.num_batches = len(dataloader)
+
+    return DataInfo(dataloader, sampler)
 
 def get_wds_dataset(
         args,
@@ -843,6 +1030,8 @@ def get_dataset_fn(dataset_type):
         return get_wds_dataset
     elif dataset_type == "toy":
         return get_toy_dataset
+    elif dataset_type == "mvdb_audiocraft":
+        return get_mvdb_dataset
     else:
         raise ValueError(f"Unsupported dataset type: {dataset_type}")
 
@@ -881,6 +1070,14 @@ def get_data(args, model_cfg):
             dataset_path=args.datasetpath,
             full_dataset=None,
         )
+
+    if args.dataset_type == "mvdb_audiocraft":
+        if "train" in args.datasetinfos:
+            args.train_data = os.path.join(args.datasetpath, args.datasetnames[0], "eval")
+
+        if "eval" in args.datasetinfos:
+            args.val_data = os.path.join(args.datasetpath, args.datasetnames[0], "test")
+            args.val_dataset_names = [os.path.join(args.datasetnames[0], "test")]
 
     if args.train_data:
         data["train"] = get_dataset_fn(args.dataset_type)(

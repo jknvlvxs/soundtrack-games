@@ -252,7 +252,8 @@ def main():
     for idx, f in enumerate(pretrained_ckpts):
         logging.info(f"pretrained on {f}")
         args.pretrained = f
-        ckpt = torch.load(f, map_location='cpu')
+        ckpt = torch.load(f, weights_only=False, map_location='cpu')
+        
         pretrain_epoch = 0
         if 'epoch' in ckpt:
             pretrain_epoch = ckpt['epoch']

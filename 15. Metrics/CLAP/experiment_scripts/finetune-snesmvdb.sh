@@ -8,63 +8,74 @@
 #SBATCH --exclusive
 #SBATCH --output=%x_%j.out
 
-module load openmpi
-module load cuda/11.7
-export NCCL_PROTO=simple
-export FI_EFA_FORK_SAFE=1
-export FI_LOG_LEVEL=1
-export FI_EFA_USE_DEVICE_RDMA=1 # use for p4dn
-export NCCL_DEBUG=info
-export OMPI_MCA_mtl_base_verbose=1
-export FI_EFA_ENABLE_SHM_TRANSFER=0
-export FI_PROVIDER=efa
-export FI_EFA_TX_MIN_CREDITS=64
-export NCCL_TREE_THRESHOLD=0
+# module load openmpi
+# module load cuda/11.7
+# export NCCL_PROTO=simple
+# export FI_EFA_FORK_SAFE=1
+# export FI_LOG_LEVEL=1
+# export FI_EFA_USE_DEVICE_RDMA=1 # use for p4dn
+# export NCCL_DEBUG=info
+# export OMPI_MCA_mtl_base_verbose=1
+# export FI_EFA_ENABLE_SHM_TRANSFER=0
+# export FI_PROVIDER=efa
+# export FI_EFA_TX_MIN_CREDITS=64
+# export NCCL_TREE_THRESHOLD=0
 
-# sent to sub script
-export HOSTNAMES=`scontrol show hostnames "$SLURM_JOB_NODELIST"`
-export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
-export MASTER_PORT=12802
-export COUNT_NODE=`scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l`
+# # sent to sub script
+# export HOSTNAMES=`scontrol show hostnames "$SLURM_JOB_NODELIST"`
+# export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+# export MASTER_PORT=12802
+# export COUNT_NODE=`scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l`
 
-echo go $COUNT_NODE
-echo $HOSTNAMES
+# echo go $COUNT_NODE
+# echo $HOSTNAMES
 
-source /fsx/yusong/clap/bin/activate
-cd /fsx/yusong/CLAP/src
-export TRANSFORMERS_CACHE=/fsx/yusong/transformers_cache
+#source /fsx/yusong/clap/bin/activate
+#cd /fsx/yusong/CLAP/src
+export CUDA_VISIBLE_DEVICES=0
+export TRANSFORMERS_CACHE=/app/xps/clap_transformers_cache
 
-srun --comment clap --cpu_bind=v --accel-bind=gn python -m evaluate.eval_linear_probe \
-    --save-frequency 50 \
+# We'll say it's not webdataset, so it will skip collecting the .tar files 
+# I've modified the code so we don't need to set train_data and val_data by hand
+
+#TODO: --freeze-text \
+# --lp-loss="ce" \
+# --lp-metrics="acc" \
+#    --report-to "wandb" \
+
+    # --data-truncating "fusion" \
+    # --fusion-type "aff_2d" \
+cd /app/code/src/laion_clap
+
+# Should use the training script for fine tuning
+# https://github.com/LAION-AI/CLAP/issues/141#issuecomment-2028780453
+
+python -m training.main \
+    --save-frequency 5 \
     --save-top-performance 3 \
     --save-most-recent \
-    --dataset-type="webdataset" \
+    --dataset-type="mvdb_audiocraft" \
     --precision="fp32" \
     --warmup 0 \
-    --batch-size=160 \
+    --batch-size=96 \
     --lr=1e-4 \
     --wd=0.1 \
     --epochs=100 \
     --workers=4 \
     --use-bn-sync \
-    --freeze-text \
-    --amodel PANN-14 \
+    --amodel HTSAT-base \
     --tmodel roberta \
-    --report-to "wandb" \
     --wandb-notes "10.14-finetune-esc50" \
-    --datasetnames "esc50" \
-    --datasetinfos "train" \
+    --datasetnames "musicgen_snes_mvdb" \
+    --datasetinfos "train" "eval" \
     --seed 3407 \
-    --remotedata \
-    --logs /fsx/clap_logs \
+    --datasetpath /app/xps/ \
+    --logs /app/xps/clap_logs \
     --gather-with-grad \
-    --lp-loss="ce" \
-    --lp-metrics="acc" \
     --lp-lr=1e-4 \
     --lp-mlp \
-    --class-label-path="../class_labels/ESC50_class_labels_indices_space.json" \
-    --openai-model-cache-dir /fsx/yusong/transformers_cache \
-    --pretrained="/fsx/clap_logs/2022_10_14-04_05_14-model_PANN-14-lr_0.0001-b_160-j_6-p_fp32/checkpoints" \
+    --openai-model-cache-dir /app/xps/clap_transformers_cache \
+    --pretrained="/app/xps/clap/music_audioset_epoch_15_esc_90.14.pt" \
     --data-filling "repeatpad" \
-    --data-truncating "rand_trunc" \
+    --data-truncating "fusion" \
     --optimizer "adam"

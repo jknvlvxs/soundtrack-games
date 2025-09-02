@@ -137,10 +137,12 @@ def main():
     torch.cuda.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     np.random.seed(args.seed)
-    if args.tmodel == "bert" or args.tmodel == "roberta" or args.tmodel == "bart":
-        assert (
-            args.pretrained == "" or args.pretrained is None
-        ), "bert/roberta/bart text encoder does not support pretrained models."
+
+    # Well, I want to fine tune it, so I need to load a pretrained model
+    # if args.tmodel == "bert" or args.tmodel == "roberta" or args.tmodel == "bart":
+    #     assert (
+    #         args.pretrained == "" or args.pretrained is None
+    #     ), "bert/roberta/bart text encoder does not support pretrained models."
 
     # get the name of the experiments
     if args.name is None:

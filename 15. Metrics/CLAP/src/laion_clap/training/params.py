@@ -62,7 +62,7 @@ def parse_args():
     )
     parser.add_argument(
         "--dataset-type",
-        choices=["webdataset", "csv", "auto", "toy"],
+        choices=["webdataset", "mvdb_audiocraft", "csv", "auto", "toy"],
         default="auto",
         help="Which type of dataset to process.",
     )
