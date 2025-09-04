@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
+SPLIT = "splits_50_40_10"
 
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
@@ -35,7 +36,7 @@ if __name__ == "__main__":
     output_base = "downsample" if args.downsampled else "full"
     df = pd.read_csv(f"../{data_dir}/videos_info.csv")
 
-    for p in ["soundtracks", "videos", "splits/train", "splits/eval", "splits/test"]:
+    for p in ["soundtracks", "videos", f"{SPLIT}/train", f"{SPLIT}/eval", f"{SPLIT}/test"]:
         ensure_dir(os.path.join(output_base, p))
 
     # SOUNDTRACKS
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     # SPLITS
     for split in ["train", "eval", "test"]:
         split_games = []
-        split_txt_path = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir, '3. split', 'splits', split+'.txt'))
+        split_txt_path = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir, '3. split', SPLIT, split+'.txt'))
 
         with open(split_txt_path, 'r') as f:
             split_games = f.readlines()
@@ -79,14 +80,14 @@ if __name__ == "__main__":
         # per game
         videos_per_game = df_split.groupby("game_id")["segment"].count().reset_index(name="num_videos")
         videos_stats = videos_per_game["num_videos"].describe()
-        save_txt(videos_per_game, f"{output_base}/splits/{split}/videos_per_game.txt")
-        save_txt(pd.DataFrame(videos_stats), f"{output_base}/splits/{split}/videos_stats.txt")
+        save_txt(videos_per_game, f"{output_base}/{SPLIT}/{split}/videos_per_game.txt")
+        save_txt(pd.DataFrame(videos_stats), f"{output_base}/{SPLIT}/{split}/videos_stats.txt")
 
         # per soundtrack
         videos_per_soundtrack_per_game = df_split.groupby(["game_id", "soundtrack"])["segment"].count().reset_index(name="num_videos")
-        save_txt(videos_per_soundtrack_per_game, f"{output_base}/splits/{split}/videos_per_soundtrack.txt")
+        save_txt(videos_per_soundtrack_per_game, f"{output_base}/{SPLIT}/{split}/videos_per_soundtrack.txt")
 
         # per genre
         videos_per_genre = df_split.groupby("genre")["segment"].count()
-        save_txt(videos_per_genre.reset_index(name="num_videos"), f"{output_base}/splits/{split}/videos_per_genre.txt")
-        plot_distribution(videos_per_genre, "Vídeos por Gênero", "Gênero", "Nº de Vídeos", f"{output_base}/splits/{split}/videos_distribution.png")
+        save_txt(videos_per_genre.reset_index(name="num_videos"), f"{output_base}/{SPLIT}/{split}/videos_per_genre.txt")
+        plot_distribution(videos_per_genre, "Vídeos por Gênero", "Gênero", "Nº de Vídeos", f"{output_base}/{SPLIT}/{split}/videos_distribution.png")
