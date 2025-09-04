@@ -3,8 +3,8 @@ import os
 import json 
 from copy import deepcopy
 
-ROOT = '/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/vmdb_2/nintendo-snes-spc'
-SAVE_PATH = '/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/vmdb_2/deepseek_multi_genres_clean.csv'
+ROOT = '/home/es119256/dados/datasets/vmdb/nintendo-snes-spc'
+SAVE_PATH = '/home/es119256/dados/datasets/vmdb/deepseek_multi_genres.csv'
 
 valid_genres = ["Shooters", "Sports", "Platform", "RPG", "Puzzle", "Action", "Fighting", "Strategy", "Simulation", "Adventure", "Racing"]
 
