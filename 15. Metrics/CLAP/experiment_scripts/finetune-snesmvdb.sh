@@ -57,19 +57,19 @@ python -m training.main \
     --dataset-type="mvdb_audiocraft" \
     --precision="fp32" \
     --warmup 0 \
-    --batch-size=96 \
+    --batch-size=128 \
     --lr=1e-4 \
     --wd=0.1 \
-    --epochs=100 \
-    --workers=4 \
+    --epochs=50 \
+    --workers=8 \
     --use-bn-sync \
     --amodel HTSAT-base \
     --tmodel roberta \
-    --wandb-notes "10.14-finetune-esc50" \
     --datasetnames "musicgen_snes_mvdb" \
     --datasetinfos "train" "eval" \
     --seed 3407 \
     --datasetpath /app/xps/ \
+    --report-to "tensorboard" \
     --logs /app/xps/clap_logs \
     --gather-with-grad \
     --lp-lr=1e-4 \
