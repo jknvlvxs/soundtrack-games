@@ -101,7 +101,7 @@ def main():
 
     priority_split = PrioritySplit()
 
-    splits = priority_split.get_split(groups, [0.8, 0.1, 0.1])
+    splits = priority_split.get_split(groups, [0.5, 0.4, 0.1])
 
     #plot_group_set(groups, train, eval, test)
 
