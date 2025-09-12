@@ -583,15 +583,39 @@ class GVMGenSolver(base.StandardSolver):
         chroma_cosine: tp.Optional[eval_metrics.ChromaCosineSimilarityMetric] = None
         should_run_eval = False
         eval_chroma_wavs: tp.Optional[torch.Tensor] = None
+
         if self.cfg.evaluate.metrics.fad:
             fad = builders.get_fad(self.cfg.metrics.fad).to(self.device)
             should_run_eval = True
+
         if self.cfg.evaluate.metrics.kld:
             kldiv = builders.get_kldiv(self.cfg.metrics.kld).to(self.device)
             should_run_eval = True
+
+        if self.cfg.evaluate.metrics.genre_kld:
+            genre_kldiv = builders.get_genre_kldiv(self.cfg.metrics.genre_kld).to(self.device)
+            should_run_eval = True
+
+        if self.cfg.evaluate.metrics.genre_class_metrics:
+            genre_class_metrics = builders.get_genre_class_metrics(self.cfg.metrics.genre_class_metrics).to(self.device)
+            should_run_eval = True
+
         if self.cfg.evaluate.metrics.text_consistency:
             text_consistency = builders.get_text_consistency(self.cfg.metrics.text_consistency).to(self.device)
             should_run_eval = True
+
+        if self.cfg.evaluate.metrics.gt_text_consistency:
+            gt_text_consistency = builders.get_text_consistency(self.cfg.metrics.text_consistency).to(self.device)
+            should_run_eval = True
+
+        if self.cfg.evaluate.metrics.tuned_text_consistency:
+            tuned_text_consistency = builders.get_text_consistency(self.cfg.metrics.tuned_text_consistency).to(self.device)
+            should_run_eval = True
+
+        if self.cfg.evaluate.metrics.gt_tuned_text_consistency:
+            gt_tuned_text_consistency = builders.get_text_consistency(self.cfg.metrics.tuned_text_consistency).to(self.device)
+            should_run_eval = True
+
         if self.cfg.evaluate.metrics.chroma_cosine:
             chroma_cosine = builders.get_chroma_cosine_similarity(self.cfg.metrics.chroma_cosine).to(self.device)
             # if we have predefind wavs for chroma we should purge them for computing the cosine metric
@@ -643,36 +667,88 @@ class GVMGenSolver(base.StandardSolver):
                 audio_stems = [Path(m.meta.path).stem + f"_{m.seek_time}" for m in meta]
 
                 if fad is not None:
+                    fad_y_pred = y_pred # another variable so that y_pred wont get altered for the next metrics
                     if self.cfg.metrics.fad.use_gt:
-                        y_pred = get_compressed_audio(y).cpu()
-                    fad.update(y_pred, y, sizes, sample_rates, audio_stems)
+                        fad_y_pred = get_compressed_audio(y).cpu()
+                    jsons_paths = [m.meta.json_path for m in meta]
+                    fad.update(fad_y_pred, y, sizes, sample_rates, audio_stems, jsons_paths)
+
                 if kldiv is not None:
+                    kldiv_y_pred = y_pred
                     if self.cfg.metrics.kld.use_gt:
-                        y_pred = get_compressed_audio(y).cpu()
-                    kldiv.update(y_pred, y, sizes, sample_rates)
+                        kldiv_y_pred = get_compressed_audio(y).cpu()
+                    kldiv.update(kldiv_y_pred, y, sizes, sample_rates)
+
+                if genre_kldiv is not None:
+                    genre_kldiv_y_pred = y_pred
+                    if self.cfg.metrics.genre_kld.use_gt:
+                        genre_kldiv_y_pred = get_compressed_audio(y).cpu()
+                    genre_kldiv.update(genre_kldiv_y_pred, y, sizes, sample_rates)
+
+                if genre_class_metrics is not None:
+                    genre_class_metrics_y_pred = y_pred
+
+                    if self.cfg.metrics.genre_class_metrics.use_gt:
+                        genre_class_metrics_y_pred = get_compressed_audio(y).cpu()
+
+                    jsons_paths = [m.meta.json_path for m in meta]
+                    genre_class_metrics.update(genre_class_metrics_y_pred, y, sizes, sample_rates, jsons_paths)
+
                 if text_consistency is not None:
                     texts = [m.description for m in meta]
-                    if self.cfg.metrics.text_consistency.use_gt:
-                        y_pred = y
                     text_consistency.update(y_pred, texts, sizes, sample_rates)
-                if chroma_cosine is not None:
-                    if self.cfg.metrics.chroma_cosine.use_gt:
-                        y_pred = get_compressed_audio(y).cpu()
-                    chroma_cosine.update(y_pred, y, sizes, sample_rates)
-                    # restore chroma conditioner's eval chroma wavs
-                    if eval_chroma_wavs is not None:
-                        self.model.condition_provider.conditioners['self_wav'].reset_eval_wavs(eval_chroma_wavs)
+
+                if gt_text_consistency is not None:
+                    texts = [m.description for m in meta]
+                    gt_text_consistency.update(y, texts, sizes, sample_rates)
+
+                if tuned_text_consistency is not None:
+                    texts = [m.description for m in meta]
+                    tuned_text_consistency.update(y_pred, texts, sizes, sample_rates)
+
+                if gt_tuned_text_consistency is not None:
+                    texts = [m.description for m in meta]
+                    gt_tuned_text_consistency.update(y, texts, sizes, sample_rates)
+
+                # if chroma_cosine is not None:
+                #     if self.cfg.metrics.chroma_cosine.use_gt:
+                #         y_pred = get_compressed_audio(y).cpu()
+                #     chroma_cosine.update(y_pred, y, sizes, sample_rates)
+                #     # restore chroma conditioner's eval chroma wavs
+                #     if eval_chroma_wavs is not None:
+                #         self.model.condition_provider.conditioners['self_wav'].reset_eval_wavs(eval_chroma_wavs)
 
             flashy.distrib.barrier()
             if fad is not None:
                 metrics['fad'] = fad.compute()
+
             if kldiv is not None:
                 kld_metrics = kldiv.compute()
                 metrics.update(kld_metrics)
+
+            if genre_kldiv is not None:
+                genre_kld_metrics = genre_kldiv.compute()
+                metrics.update(genre_kld_metrics)
+
+            if genre_class_metrics is not None:
+                genre_class_metrics_computed = genre_class_metrics.compute()
+                metrics.update(genre_class_metrics_computed)
+
             if text_consistency is not None:
                 metrics['text_consistency'] = text_consistency.compute()
+
+            if gt_text_consistency is not None:
+                metrics['gt_text_consistency'] = gt_text_consistency.compute()
+
+            if tuned_text_consistency is not None:
+                metrics['tuned_text_consistency'] = tuned_text_consistency.compute()
+
+            if gt_tuned_text_consistency is not None:
+                metrics['gt_tuned_text_consistency'] = gt_tuned_text_consistency.compute()
+
             if chroma_cosine is not None:
                 metrics['chroma_cosine'] = chroma_cosine.compute()
+
             metrics = average(metrics)
             metrics = flashy.distrib.average_metrics(metrics, len(loader))
 

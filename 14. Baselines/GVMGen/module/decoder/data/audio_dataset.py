@@ -207,7 +207,7 @@ def find_audio_files(path: tp.Union[Path, str],
 
 def load_audio_meta(
         path: tp.Union[str, Path],
-        kld_or_fad: bool = False,
+        single_audio_instance: bool = False,
         resolve: bool = True, 
         fast: bool = True
     ) -> tp.List[AudioMeta]:
@@ -215,7 +215,7 @@ def load_audio_meta(
 
     Args:
         path (str or Path): Path to JSON file.
-        kld_or_fad (bool): If running KLD or FAD metrics, we need to get only one instance of the same audio.
+        single_audio_instance (bool): If running KLD or FAD metrics, we need to get only one instance of the same audio.
         resolve (bool): Whether to resolve the path from AudioMeta (default=True).
         fast (bool): activates some tricks to make things faster.
     Returns:
@@ -229,7 +229,7 @@ def load_audio_meta(
     for line in lines:
         d = json.loads(line)
 
-        if kld_or_fad:
+        if single_audio_instance:
             if last_mp3 == d['path']:
                 continue
             else:
@@ -562,12 +562,12 @@ class AudioDataset:
             else:
                 raise ValueError("Don't know where to read metadata from in the dir. "
                                  "Expecting either a data.jsonl or data.jsonl.gz file but none found.")
-        meta = load_audio_meta(root, kwargs['kld_or_fad'])
+        meta = load_audio_meta(root, kwargs['single_audio_instance'])
 
         if split in ['valid', 'evaluate'] and kwargs['num_samples'] > len(meta):
             kwargs['num_samples'] = len(meta)
 
-        del kwargs['kld_or_fad']
+        del kwargs['single_audio_instance']
 
         return cls(meta, **kwargs)
 

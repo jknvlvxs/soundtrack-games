@@ -188,6 +188,21 @@ def get_kldiv(cfg: omegaconf.DictConfig) -> metrics.KLDivergenceMetric:
     kwargs = dict_from_config(cfg.get(cfg.model))
     return klass(**kwargs)
 
+
+def get_genre_kldiv(cfg: omegaconf.DictConfig) -> metrics.GenreKLDivergenceMetric:
+    """Instantiate Genre KL-Divergence metric from config."""
+    return metrics.GenreKLDivergenceMetric(
+        checkpoints_path=cfg.checkpoints
+    )
+
+
+def get_genre_class_metrics(cfg: omegaconf.DictConfig) -> metrics.PaSSTGenreClassificationMetric:
+    """Instantiate Genre Acuracy metric from config."""
+    return metrics.PaSSTGenreClassificationMetric(
+        checkpoints_path=cfg.checkpoints
+    )
+
+
 def get_text_consistency(cfg: omegaconf.DictConfig) -> metrics.TextConsistencyMetric:
     """Instantiate Text Consistency metric from config."""
     # print("@@@@@ solvers.builders.get_text_consistency")
@@ -254,13 +269,7 @@ def get_audio_datasets(cfg: omegaconf.DictConfig,
         kwargs['sample_rate'] = sample_rate
         kwargs['channels'] = channels
 
-        kld_or_fad =  cfg.evaluate.metrics.kld or cfg.evaluate.metrics.fad
-        if cfg.evaluate.metrics.text_consistency and kld_or_fad:
-            raise ValueError("Can't evaluate Text Consistency along with FAD or KLD. FAD and KLD can only see the same audio one, while Text Consistency see it many times with different video descriptions") 
-        if kld_or_fad:
-            print(" ------------> Testing KLD or FAD: Only the first instance of each MP3 will be used <------------ ")
-
-        kwargs['kld_or_fad'] = kld_or_fad
+        kwargs['single_audio_instance'] = cfg.dataset.evaluate.single_audio_instance
 
         if kwargs.get('permutation_on_files') and cfg.optim.updates_per_epoch:
             kwargs['num_samples'] = (

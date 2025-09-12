@@ -10,6 +10,7 @@ import os
 import subprocess
 import tempfile
 import typing as tp
+import json
 
 from ..data.audio import audio_write
 from ..data.audio_utils import convert_audio
@@ -181,7 +182,8 @@ class FrechetAudioDistanceMetric(torchmetrics.Metric):
 
     def update(self, preds: torch.Tensor, targets: torch.Tensor,
                sizes: torch.Tensor, sample_rates: torch.Tensor,
-               stems: tp.Optional[tp.List[str]] = None):
+               stems: tp.Optional[tp.List[str]] = None, 
+               jsons_paths: tp.Optional[tp.List[str]] = None):
         """Update torchmetrics.Metrics by saving the audio and updating the manifest file."""
         assert preds.shape == targets.shape, f"preds={preds.shape} != targets={targets.shape}"
         num_samples = preds.shape[0]
@@ -210,12 +212,18 @@ class FrechetAudioDistanceMetric(torchmetrics.Metric):
             try:
                 # for the ground truth audio, we enforce the 'peak' strategy to avoid modifying
                 # the original audio when writing it
-                target_wav = convert_audio(
-                    target_wav.unsqueeze(0), from_rate=sample_rate,
-                    to_rate=self.model_sample_rate, to_channels=1).squeeze(0)
-                audio_write(
-                    self.samples_background_dir / stem_name, target_wav, sample_rate=self.model_sample_rate,
-                    format=self.format, strategy="peak")
+                json_idx = None
+                if jsons_paths:
+                    with open(jsons_paths[i], 'r') as f:
+                        json_idx = json.load(f)['json_idx']
+                # Only send to the gt when json idx=0
+                if json_idx == None or (json_idx != None and json_idx == 0):
+                    target_wav = convert_audio(
+                        target_wav.unsqueeze(0), from_rate=sample_rate,
+                        to_rate=self.model_sample_rate, to_channels=1).squeeze(0)
+                    audio_write(
+                        self.samples_background_dir / stem_name, target_wav, sample_rate=self.model_sample_rate,
+                        format=self.format, strategy="peak")
             except Exception as e:
                 logger.error(f"Exception occured when saving background files for FAD computation: {repr(e)} - {e}")
 
