@@ -32,7 +32,7 @@
 
 #source /fsx/yusong/clap/bin/activate
 #cd /fsx/yusong/CLAP/src
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=1
 export TRANSFORMERS_CACHE=/app/xps/clap_transformers_cache
 
 # We'll say it's not webdataset, so it will skip collecting the .tar files 
@@ -60,7 +60,7 @@ python -m training.main \
     --batch-size=128 \
     --lr=1e-4 \
     --wd=0.1 \
-    --epochs=50 \
+    --epochs=15 \
     --workers=8 \
     --use-bn-sync \
     --amodel HTSAT-base \
@@ -77,5 +77,5 @@ python -m training.main \
     --openai-model-cache-dir /app/xps/clap_transformers_cache \
     --pretrained="/app/xps/clap/music_audioset_epoch_15_esc_90.14.pt" \
     --data-filling "repeatpad" \
-    --data-truncating "fusion" \
+    --data-truncating "rand_trunc" \
     --optimizer "adam"
