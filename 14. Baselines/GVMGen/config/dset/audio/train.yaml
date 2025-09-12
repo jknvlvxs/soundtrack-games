@@ -1,0 +1,10 @@
+# @package __global__
+
+datasource:
+  max_channels: 2
+  max_sample_rate: 32000
+
+  train: /app/code/dataset/snes_mvdb_jsonl/train
+  valid: /app/code/dataset/snes_mvdb_jsonl/eval
+  evaluate: /app/code/dataset/snes_mvdb_jsonl/test
+  generate: /app/code/dataset/snes_mvdb_jsonl/test
