@@ -866,7 +866,6 @@ sanrio-shanghai
 sanrio-world-smash-ball
 sargeant-saunders-combat
 satellaview-bs-x
-satesupudx-4
 saturday-night-slam-masters
 scooby-doo-mystery
 sd-f-1-grand-prix
@@ -897,7 +896,6 @@ shiens-revenge
 shigesato-itoi-no-bass-tsuri-no1
 shigetaka-kashiwagi-no-top-water-bassing
 shijou-saikyou-league-serie-a-ace-striker
-shijou-saikyou-no-quiz-ou-kettei-sen-super
 shiki-eiyuuden-jinryuu-densetsu
 shin-ikkaku-senkin
 shin-kidou-senki-gundam-w-endless-duel

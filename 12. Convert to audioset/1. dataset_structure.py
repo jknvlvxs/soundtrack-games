@@ -10,9 +10,9 @@ import numpy as np
 import pandas as pd
 import ffmpeg
 
-SPLIT_TXTS = "../11. Split dataset/3. split/splits"
+SPLIT_TXTS = "../11. Split dataset/3. split/splits_50_40_10"
 VIDEOS_CSV = "../11. Split dataset/2. downsample/videos_info.csv"
-GENRES_CSV = "../11. Split dataset/1. get_videos_info/deepseek_genres.csv"
+GENRES_CSV = "/app/dataset/deepseek_multi_genres.csv"
 GENRES = ["Platform", "Sports", "RPG", "Fighting", "Action", "Shooters", "Puzzle", "Strategy", "Racing", "Simulation", "Adventure"]
 
 def get_splits_games() -> dict[str, list[str]]:
@@ -71,7 +71,7 @@ def select_n_rand_games_for_splits(split_dict:dict[str, list[str]], n:int=-1, sp
 
     return split_dict
 
-def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd.DataFrame):
+def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd.DataFrame, genres_df:pd.DataFrame):
     """
         Audiocraft dataset have the format
 
@@ -136,6 +136,17 @@ def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd
         with open(description_orig_path, 'r') as f:
             description = f.read().rstrip("\n")
 
+        # Get the genres
+        try:
+            game_genres = genres_df[genres_df['game_folder'] == game].dropna(axis=1)
+            game_genres = game_genres.reset_index().iloc[0].tolist()[2:]
+        except:
+            tqdm.write(f"GONE WRONG IN PANDAS: {game}")
+            continue
+
+        #game_genres = [genres_idx_dict[g] for g in game_genres]
+        #game_genres_one_hot = [1 if num in game_genres else 0 for num in range(len(GENRES))]
+
         soundtrack_json = {
             "key": "", 
             "artist": '', #probe['format'].get('tags', {}).get('artist', ''),
@@ -151,11 +162,11 @@ def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd
             "instrument": "",
             "moods": [],
             # New tags that are not part of the MusicGen examples
+            "game_genres": game_genres,
             "year": '', #probe['format'].get('tags', {}).get('copyright', ''),
             "video": segment_orig_path,
             "json_idx": idx
         }
-        # TODO check on the paper how this keys of the dictionary are used
 
         with open(soundtrack_json_path, 'w') as f:
             json.dump(soundtrack_json, f, indent=4)
@@ -163,8 +174,8 @@ def convert_soundtrack_videos(dataset_root:str, split_path:str, soundtrack_df:pd
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='1. dataset_structure.py')
-    parser.add_argument('--original_dataset', type=str, default="/home/es119256/dados/datasets/vmdb_3/nintendo-snes-spc", help="path for the snes mvdb dataset games folder")
-    parser.add_argument('--converted_dataset', type=str, default="/home/es119256/dados/repos/visual-bardo/dataset", help="path to audiocraft/dataset where the converted dataset will be")
+    parser.add_argument('--original_dataset', type=str, default="/app/dataset/nintendo-snes-spc", help="path for the snes mvdb dataset games folder")
+    parser.add_argument('--converted_dataset', type=str, default="/app/code/dataset", help="path to audiocraft/dataset where the converted dataset will be")
     parser.add_argument('--selection_splits', type=str, default="eval, test", help="splits (train, eval, test) to apply selecion of games_per_genre and examples_per_genre")
     parser.add_argument('--games_per_genre', type=int, default=-1, help="number of games to randomly select for each genre for selection_splits splits")
     parser.add_argument('--examples_per_sdtk', type=int, default=10_000_000, help="number of exmaples for each soundtrack of each game selected according to games_per_genre")
@@ -182,13 +193,18 @@ def main():
     print(f"selection_splits: {selection_splits}, games_per_genre: {games_per_genre}, examples_per_sdtk: {examples_per_sdtk}")
 
     split_dict = get_splits_games()
-    split_dict = select_n_rand_games_for_splits(split_dict=split_dict, n=games_per_genre, splits=selection_splits)
+    #split_dict = select_n_rand_games_for_splits(split_dict=split_dict, n=games_per_genre, splits=selection_splits)
 
     segments_df = pd.read_csv(VIDEOS_CSV)
 
     # Create folder where the links will go
     if not os.path.exists(converted_dataset):
         os.makedirs(converted_dataset)
+
+    # genres_idx_dict = sorted(GENRES)
+    # genres_idx_dict = {k:v for v,k in enumerate(genres_idx_dict)}
+
+    genres_df = pd.read_csv(GENRES_CSV)
 
     # Loop the dataset according to the split
     for split, games in split_dict.items():
@@ -210,7 +226,7 @@ def main():
                         sampled_indexes = np.random.choice(soundtrack_df.index, examples_per_sdtk)
                         soundtrack_df = soundtrack_df.iloc[sampled_indexes]
 
-                convert_soundtrack_videos(original_dataset, split_path, soundtrack_df)
+                convert_soundtrack_videos(original_dataset, split_path, soundtrack_df, genres_df)
 
 if __name__ == "__main__":
     main()
