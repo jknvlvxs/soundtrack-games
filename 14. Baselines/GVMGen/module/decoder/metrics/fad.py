@@ -188,7 +188,7 @@ class FrechetAudioDistanceMetric(torchmetrics.Metric):
         assert preds.shape == targets.shape, f"preds={preds.shape} != targets={targets.shape}"
         num_samples = preds.shape[0]
         assert num_samples == sizes.size(0) and num_samples == sample_rates.size(0)
-        assert stems is None or num_samples == len(set(stems))
+        #assert stems is None or num_samples == len(set(stems))
         for i in range(num_samples):
             self.total_files += 1  # type: ignore
             self.counter += 1

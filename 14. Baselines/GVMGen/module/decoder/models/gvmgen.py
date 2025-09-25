@@ -147,18 +147,23 @@ class GVMGen(BaseGenModel):
             melody_wavs (torch.Tensor, optional): A batch of waveforms
                 used as melody conditioning. Defaults to None.
         """
+        #print(f"GVMGen _prepare_tokens_and_attributes cond_type is {self.cond_type}")
         if self.cond_type == 'text':
             attributes = [
                 ConditioningAttributes(text={'description': description})
                 for description in descriptions]
         elif self.cond_type == 'video':
+            #print(f"\nCondition is VIDEO, with len {len(descriptions)} and VIDEO of shape {descriptions[0].shape}\n")
+
             attributes = [
+                # Conditioning attrs is a class that does nothing, just holds the attrs
                 ConditioningAttributes(video={'visual_content': description})
                 for description in descriptions]
         else:
             raise ValueError(f"Unknown conditioning type: {type}")
 
         if melody_wavs is None:
+            #print(f"\nCondition melody_wavs is None\n")
             for attr in attributes:
                 attr.wav['self_wav'] = WavCondition(
                     torch.zeros((1, 1, 1), device=self.device),
@@ -166,6 +171,7 @@ class GVMGen(BaseGenModel):
                     sample_rate=[self.sample_rate],
                     path=[None])
         else:
+            #print(f"\nCondition melody_wavs is NOT None\n")
             if 'self_wav' not in self.lm.condition_provider.conditioners:
                 raise RuntimeError("This model doesn't support melody conditioning. "
                                    "Use the `melody` model.")
@@ -188,12 +194,14 @@ class GVMGen(BaseGenModel):
                     )
 
         if prompt is not None:
+            #print(f"\nCondition prompt is NOT None\n")
             if descriptions is not None:
                 assert len(descriptions) == len(prompt), "Prompt and nb. descriptions doesn't match"
             prompt = prompt.to(self.device)
             prompt_tokens, scale = self.compression_model.encode(prompt)
             assert scale is None
         else:
+            #print(f"\nCondition prompt is None\n")
             prompt_tokens = None
         return attributes, prompt_tokens
 
@@ -208,6 +216,7 @@ class GVMGen(BaseGenModel):
         Returns:
             torch.Tensor: Generated audio, of shape [B, C, T], T is defined by the generation params.
         """
+        print("GVMGen _generate_tokens")
         total_gen_len = int(self.duration * self.frame_rate)
         max_prompt_len = int(min(self.duration, self.max_duration) * self.frame_rate)
         current_gen_offset: int = 0
@@ -230,6 +239,7 @@ class GVMGen(BaseGenModel):
             callback = _progress_callback
 
         if self.duration <= self.max_duration:
+            #print("generate by sampling from LM, simple case.")
             # generate by sampling from LM, simple case.
             with self.autocast:
                 gen_tokens = self.lm.generate(
@@ -237,6 +247,7 @@ class GVMGen(BaseGenModel):
                     callback=callback, max_gen_len=total_gen_len, **self.generation_params)
 
         else:
+            #print("generate by sampling from LM, NOT simple case.")
             # now this gets a bit messier, we need to handle prompts,
             # melody conditioning etc.
             ref_wavs = [attr.wav['self_wav'] for attr in attributes]

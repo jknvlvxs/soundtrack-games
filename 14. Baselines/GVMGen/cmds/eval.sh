@@ -1,6 +1,6 @@
 export AUDIOCRAFT_TEAM=default
 export USER=gvmgen # Will create an audiocraft_felipe folder inside checkpoints
-export CUDA_VISIBLE_DEVICES=7
+export CUDA_VISIBLE_DEVICES=1
 
 # FAD
 export CONDA_ENV_DIR="$CONDA_PREFIX/envs"
@@ -11,11 +11,11 @@ export TF_LIBRARY_PATH="$CONDA_ENV_DIR/fad/lib/python3.10/site-packages/nvidia/c
 dora -P module run \
     solver=gvmgen/gvmgen \
     model/lm/model_scale=large \
-    continue_from=/app/code/checkpoints/state_dict.bin \
-    dataset.num_workers=6 \
-    dataset.batch_size=6 \
-    +dataset.evaluate.batch_size=24 \
-    +metrics.fad.tf.batch_size=24 \
+    continue_from=/app/xps/audiocraft_gvmgen/xps/78439aeb_tuned_new_split/state_dict.bin \
+    dataset.num_workers=4 \
+    dataset.batch_size=16 \
+    +dataset.evaluate.batch_size=16 \
+    +metrics.fad.tf.batch_size=16 \
     execute_only=evaluate \
     dataset.evaluate.disable_sampling=true \
     evaluate.metrics.fad=true \
@@ -25,10 +25,10 @@ dora -P module run \
     metrics.kld.passt.pretrained_length=30 \
     evaluate.metrics.genre_kld=true \
     metrics.genre_kld.use_gt=false \
-    metrics.genre_kld.checkpoints=//reference/genre_classifier_new \
+    metrics.genre_kld.checkpoints=//app/xps/genre_classifier_new \
     evaluate.metrics.genre_class_metrics=true \
     metrics.genre_class_metrics.use_gt=false \
-    metrics.genre_class_metrics.checkpoints=//reference/genre_classifier_new \
+    metrics.genre_class_metrics.checkpoints=/app/xps/genre_classifier_new \
     evaluate.metrics.text_consistency=true \
     evaluate.metrics.gt_text_consistency=false \
     evaluate.metrics.tuned_text_consistency=true \

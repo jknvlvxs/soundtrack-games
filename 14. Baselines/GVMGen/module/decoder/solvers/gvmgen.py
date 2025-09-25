@@ -579,7 +579,12 @@ class GVMGenSolver(base.StandardSolver):
         # instantiate evaluation metrics, if at least one metric is defined, run audio generation evaluation
         fad: tp.Optional[eval_metrics.FrechetAudioDistanceMetric] = None
         kldiv: tp.Optional[eval_metrics.KLDivergenceMetric] = None
+        genre_kldiv: tp.Optional[eval_metrics.GenreKLDivergenceMetric] = None
+        genre_class_metrics: tp.Optional[eval_metrics.PaSSTGenreClassificationMetric] = None
         text_consistency: tp.Optional[eval_metrics.TextConsistencyMetric] = None
+        gt_text_consistency: tp.Optional[eval_metrics.TextConsistencyMetric] = None
+        tuned_text_consistency: tp.Optional[eval_metrics.TextConsistencyMetric] = None
+        gt_tuned_text_consistency: tp.Optional[eval_metrics.TextConsistencyMetric] = None
         chroma_cosine: tp.Optional[eval_metrics.ChromaCosineSimilarityMetric] = None
         should_run_eval = False
         eval_chroma_wavs: tp.Optional[torch.Tensor] = None
@@ -692,6 +697,9 @@ class GVMGenSolver(base.StandardSolver):
                         genre_class_metrics_y_pred = get_compressed_audio(y).cpu()
 
                     jsons_paths = [m.meta.json_path for m in meta]
+                    # print(f"LEN JSONS PATHS {len(jsons_paths)}")
+                    # print(f"genre_class_metrics_y_pred {genre_class_metrics_y_pred.shape}")
+                    # print(f"genre_class y {y.shape}")
                     genre_class_metrics.update(genre_class_metrics_y_pred, y, sizes, sample_rates, jsons_paths)
 
                 if text_consistency is not None:

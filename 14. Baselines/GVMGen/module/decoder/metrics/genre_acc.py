@@ -112,6 +112,8 @@ class GenreClassificationMetrics(torchmetrics.Metric):
             tgt_labels.append(torch.Tensor(gt_labels))
 
         tgt_labels = torch.stack(tgt_labels, dim=0)
+        # print("TARGET LABELS", tgt_labels.shape)
+        # print("PERDS PROBS", preds_probs.shape)
 
         if preds_probs is not None and tgt_labels is not None:
             assert preds_probs.shape == tgt_labels.shape

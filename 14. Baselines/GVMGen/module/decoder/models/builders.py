@@ -87,6 +87,9 @@ def get_lm_model(cfg: omegaconf.DictConfig) -> LMModel:
     """Instantiate a transformer LM."""
     if cfg.lm_model in ['transformer_lm', 'transformer_lm_magnet']:
         kwargs = dict_from_config(getattr(cfg, 'transformer_lm'))
+
+        #print(f"\n get_lm_model kwargs: {kwargs}\n")
+
         n_q = kwargs['n_q']
         q_modeling = kwargs.pop('q_modeling', None)
         codebooks_pattern_cfg = getattr(cfg, 'codebooks_pattern')
@@ -94,7 +97,9 @@ def get_lm_model(cfg: omegaconf.DictConfig) -> LMModel:
         cls_free_guidance = dict_from_config(getattr(cfg, 'classifier_free_guidance'))
         cfg_prob, cfg_coef = cls_free_guidance['training_dropout'], cls_free_guidance['inference_coef']
         fuser = get_condition_fuser(cfg)
+
         condition_provider = get_conditioner_provider(kwargs["dim"], cfg).to(cfg.device)
+
         if len(fuser.fuse2cond['cross']) > 0:  # enforce cross-att programmatically
             kwargs['cross_attention'] = True
         if codebooks_pattern_cfg.modeling is None:
@@ -132,15 +137,20 @@ def get_conditioner_provider(output_dim: int, cfg: omegaconf.DictConfig) -> Cond
     condition_provider_args.pop('merge_text_conditions_p', None)
     condition_provider_args.pop('drop_desc_p', None)
 
+    #print(f"\n builder.get_conditioner_provider cfg: {cfg}")
+
     for cond, cond_cfg in dict_cfg.items():
         model_type = cond_cfg['model']
-        print(f"Instantiating conditioner {cond} of type {model_type}")
+        #print(f"Instantiating conditioner {cond} of type {model_type}")
         model_args = cond_cfg[model_type]
         if model_type == 't5':
+            #print("-> T5Conditioner")
             conditioners[str(cond)] = T5Conditioner(output_dim=output_dim, device=device, **model_args)
         elif model_type == 'lut':
+            #print("-> LUTConditioner")
             conditioners[str(cond)] = LUTConditioner(output_dim=output_dim, **model_args)
         elif model_type == 'chroma_stem':
+            #print("-> ChromaStemConditioner")
             conditioners[str(cond)] = ChromaStemConditioner(
                 output_dim=output_dim,
                 duration=duration,
@@ -148,12 +158,14 @@ def get_conditioner_provider(output_dim: int, cfg: omegaconf.DictConfig) -> Cond
                 **model_args
             )
         elif model_type == 'clap':
+            #print("-> CLAPEmbeddingConditioner")
             conditioners[str(cond)] = CLAPEmbeddingConditioner(
                 output_dim=output_dim,
                 device=device,
                 **model_args
             )
         elif model_type == 'video':
+            #print("-> CLIPConditioner") # Ok, obviously gets this one
             conditioners[str(cond)] = CLIPConditioner(
                 output_dim=output_dim,
                 device=device,

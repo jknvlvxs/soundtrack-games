@@ -138,6 +138,7 @@ class BaseGenModel(ABC):
             assert scale is None
         else:
             prompt_tokens = None
+
         return attributes, prompt_tokens
 
     def generate_unconditional(self, num_samples: int, progress: bool = False,
@@ -164,6 +165,7 @@ class BaseGenModel(ABC):
             descriptions (list of str): A list of strings used as text/video conditioning.
             progress (bool, optional): Flag to display progress of the generation process. Defaults to False.
         """
+        #print("BaseGenModel Generate")
         attributes, prompt_tokens = self._prepare_tokens_and_attributes(descriptions, None)
         assert prompt_tokens is None
         tokens = self._generate_tokens(attributes, prompt_tokens, progress)

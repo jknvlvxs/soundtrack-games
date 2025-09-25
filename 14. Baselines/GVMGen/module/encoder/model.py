@@ -319,6 +319,7 @@ class VisionTransformer(nn.Module):
         if is_qformer:
             self.query_tokens = nn.Parameter(torch.zeros(1, query_num, width))
             nn.init.normal_(self.query_tokens, std=0.02)
+            # print(f"QUERIES ARE DECLARED WITH SHAPE {self.query_tokens.shape}") -> torch.Size([1, 16, 1024])
             self.qformer = QFormerModel(width, heads, layer_norm_eps, hidden_dropout_prob, qformer_layers, cross_attention_frequency)
             self.initialize_parameters(width, layers, cross_attention_frequency)
 
@@ -352,6 +353,7 @@ class VisionTransformer(nn.Module):
 
         if self.is_qformer:
             query_tokens = self.query_tokens.expand(x.shape[0], -1, -1)
+            # print(f"\n QUERIES AFTER EXPAND {query_tokens.shape}") -> torch.Size([60, 16, 1024])
             x = self.qformer(query_tokens, x)
             if self.query_type == "mean":
                 x = x.mean(dim=1)
@@ -359,6 +361,7 @@ class VisionTransformer(nn.Module):
                 x = x.sum(dim=1)
             else:
                 raise ValueError("query_type must be mean or sum")
+            print(f"\n QUERIES OUTPUT {x.shape} \n")
             x = self.ln_post(x)
         else:
             x = self.ln_post(x[:, 0, :])
@@ -383,6 +386,7 @@ class CLIP(nn.Module):
         super().__init__()
 
         if isinstance(vision_layers, (tuple, list)):
+            print("---------> isinstance(vision_layers, (tuple, list))")
             vision_heads = vision_width * 32 // 64
             self.visual = ModifiedResNet(
                 layers=vision_layers,
@@ -395,6 +399,7 @@ class CLIP(nn.Module):
             vision_heads = vision_width // 64
             qformer_args = qformer_cfg['qformer'] if 'qformer' in qformer_cfg else {}
             if 'qformer' in qformer_cfg:
+                print("---------> 'qformer' in qformer_cfg") # This is gets executed
                 self.visual = VisionTransformer(
                     input_resolution=image_resolution,
                     patch_size=vision_patch_size,
@@ -406,6 +411,7 @@ class CLIP(nn.Module):
                     **qformer_args
                 )
             else:
+                print("---------> ELSE, so 'qformer' not in qformer_cfg")
                 self.visual = VisionTransformer(
                     input_resolution=image_resolution,
                     patch_size=vision_patch_size,
@@ -475,12 +481,14 @@ def build_model(state_dict: dict, is_qformer: bool, qformer_cfg: omegaconf.DictC
     vit = "visual.proj" in state_dict
 
     if vit:
+        print("\n build_model IS VIT \n")
         vision_width = state_dict["visual.conv1.weight"].shape[0]
         vision_layers = len([k for k in state_dict.keys() if k.startswith("visual.") and k.endswith(".attn.in_proj_weight")])
         vision_patch_size = state_dict["visual.conv1.weight"].shape[-1]
         grid_size = round((state_dict["visual.positional_embedding"].shape[0] - 1) ** 0.5)
         image_resolution = vision_patch_size * grid_size
     else:
+        print("\n build_model IS NOT VIT \n")
         counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in [1, 2, 3, 4]]
         vision_layers = tuple(counts)
         vision_width = state_dict["visual.layer1.0.conv1.weight"].shape[0]

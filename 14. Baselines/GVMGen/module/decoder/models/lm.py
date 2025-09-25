@@ -454,6 +454,7 @@ class LMModel(StreamingModule):
         # the padding structure is exactly the same between train and test.
         # With a batch size of 1, this can be slower though.
         cfg_conditions: CFGConditions
+        #print(f"\n ############### IS TWO STEP CONFIG {two_step_cfg} ############### \n") False
         two_step_cfg = self.two_step_cfg if two_step_cfg is None else two_step_cfg
         if conditions:
             null_conditions = ClassifierFreeGuidanceDropout(p=1.0)(conditions)

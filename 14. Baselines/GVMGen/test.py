@@ -27,6 +27,11 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = gvmgen.GVMGen.get_pretrained(args.model_path, device=device)
 
+    # print(f'MODEL: {model}')
+    # print('\n#################################################\n')
+    # print('\n#################################################\n')
+    # print(f'MODEL LM: {model.lm}')
+
     mp4_pt = capture_video(args.video_path, args.fps, device, args.duration)
     model.set_generation_params(duration=mp4_pt.shape[0])
 

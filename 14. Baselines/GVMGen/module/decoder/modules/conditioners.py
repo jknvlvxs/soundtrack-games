@@ -491,6 +491,8 @@ class CLIPConditioner(VideoConditioner):
         self.video_len = video_len
         clip_model, _ = encoder.load(name, device=device, jit=False, is_qformer=is_qformer, qformer_cfg=qformer)
         clip_model = clip_model.train(mode=finetune)
+
+        # Freeze CLIP
         if is_qformer:
             self.clip = clip_model
             for _, param in self.clip.visual.conv1.named_parameters():

@@ -59,6 +59,8 @@ def convert_to_gvmgen(file_path:str, snes_split:str, gvmgen_split:str, v_tensor_
         "name": "",
         "instrument": "",
         "moods": "",
+        "game_genres": file_dict["game_genres"],
+        "json_idx": file_dict["json_idx"],
         "path": mp3_path,
     }
 
