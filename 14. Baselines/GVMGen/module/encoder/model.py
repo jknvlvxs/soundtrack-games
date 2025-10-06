@@ -386,7 +386,7 @@ class CLIP(nn.Module):
         super().__init__()
 
         if isinstance(vision_layers, (tuple, list)):
-            print("---------> isinstance(vision_layers, (tuple, list))")
+            #print("---------> isinstance(vision_layers, (tuple, list))")
             vision_heads = vision_width * 32 // 64
             self.visual = ModifiedResNet(
                 layers=vision_layers,
@@ -399,7 +399,7 @@ class CLIP(nn.Module):
             vision_heads = vision_width // 64
             qformer_args = qformer_cfg['qformer'] if 'qformer' in qformer_cfg else {}
             if 'qformer' in qformer_cfg:
-                print("---------> 'qformer' in qformer_cfg") # This is gets executed
+                #print("---------> 'qformer' in qformer_cfg") # This is gets executed
                 self.visual = VisionTransformer(
                     input_resolution=image_resolution,
                     patch_size=vision_patch_size,
@@ -411,7 +411,7 @@ class CLIP(nn.Module):
                     **qformer_args
                 )
             else:
-                print("---------> ELSE, so 'qformer' not in qformer_cfg")
+                #print("---------> ELSE, so 'qformer' not in qformer_cfg")
                 self.visual = VisionTransformer(
                     input_resolution=image_resolution,
                     patch_size=vision_patch_size,
@@ -481,14 +481,14 @@ def build_model(state_dict: dict, is_qformer: bool, qformer_cfg: omegaconf.DictC
     vit = "visual.proj" in state_dict
 
     if vit:
-        print("\n build_model IS VIT \n")
+        #print("\n build_model IS VIT \n")
         vision_width = state_dict["visual.conv1.weight"].shape[0]
         vision_layers = len([k for k in state_dict.keys() if k.startswith("visual.") and k.endswith(".attn.in_proj_weight")])
         vision_patch_size = state_dict["visual.conv1.weight"].shape[-1]
         grid_size = round((state_dict["visual.positional_embedding"].shape[0] - 1) ** 0.5)
         image_resolution = vision_patch_size * grid_size
     else:
-        print("\n build_model IS NOT VIT \n")
+        #print("\n build_model IS NOT VIT \n")
         counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in [1, 2, 3, 4]]
         vision_layers = tuple(counts)
         vision_width = state_dict["visual.layer1.0.conv1.weight"].shape[0]

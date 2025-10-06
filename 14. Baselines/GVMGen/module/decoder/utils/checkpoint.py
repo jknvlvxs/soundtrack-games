@@ -85,8 +85,10 @@ def resolve_checkpoint_path(sig_or_path: tp.Union[Path, str], name: tp.Optional[
 
 
 def load_checkpoint(checkpoint_path: Path, is_sharded: bool = False) -> tp.Any:
+    print(f"\n load_checkpoint, checkpoint_path: {checkpoint_path}")
     """Load state from checkpoints at the specified checkpoint path."""
     if is_sharded:
+        print(f"\n load_checkpoint, is_sharded: {is_sharded}")
         rank0_checkpoint_path = checkpoint_path.parent / checkpoint_name(use_fsdp=False)
         if rank0_checkpoint_path.exists():
             check_sharded_checkpoint(checkpoint_path, rank0_checkpoint_path)

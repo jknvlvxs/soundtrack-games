@@ -12,6 +12,9 @@ from tqdm import tqdm
 from audiocraft.data.audio import audio_write
 from module.decoder.models import gvmgen
 
+import moviepy.editor as mp
+from pydub import AudioSegment
+
 def is_mp3(file:str):
     extension = file.split('.')[-1]
     return extension == 'mp3'
@@ -131,11 +134,30 @@ def run_inference(samples_dicts:list[dict[str, str]], state_dict_folder:str, sav
         if not os.path.exists(gen_sdtk):
             run_inference_gvmgen(state_dict_folder, vid_tensor_path, gen_sdtk)
 
+        video_mp = mp.VideoFileClip(vid_dest_path)
+        audio_clip = AudioSegment.from_wav(gen_sdtk+'.wav')
+        audio_clip[0:int(video_mp.duration*1000)].export(gen_sdtk+'.wav')
+        # Render generated music into input video
+        audio_mp = mp.AudioFileClip(gen_sdtk+'.wav')
+
+        audio_mp = audio_mp.subclip(0, video_mp.duration )
+        final = video_mp.set_audio(audio_mp)
+        try:
+            final.write_videofile(os.path.join(vid_dest_folder, vid_name+'_gen.mp4'),
+                codec='libx264', 
+                audio_codec='aac', 
+                temp_audiofile='temp-audio.m4a',
+                remove_temp=True
+            )
+        except Exception as e:
+            print(f"error：{e}")
+        #os.remove(str(idx)+'.wav')
+
 def run_inference_gvmgen(state_dict_folder:str, vid_tensor_path, save_path):
     print(f"state_dict_folder {state_dict_folder}")
 
     model = gvmgen.GVMGen.get_pretrained(state_dict_folder, device='cuda')
-    model.set_generation_params(duration=60)
+    model.set_generation_params(duration=11)
 
     wave = model.generate([vid_tensor_path])[0]
 
@@ -144,9 +166,9 @@ def run_inference_gvmgen(state_dict_folder:str, vid_tensor_path, save_path):
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='test_suite.py')
-    parser.add_argument('--state_dict_bin_folder', type=str, default="/app/code/checkpoints", help="path to folder containing state_dict.bin")
+    parser.add_argument('--state_dict_bin_folder', type=str, default="/app/code/checkpoints/0db722fd_new_split_corrected", help="path to folder containing state_dict.bin")
     parser.add_argument('--save_path', type=str, default="/app/xps/checkpoints_and_inference", help="path to folder where results will be stored")
-    parser.add_argument('--model_name', type=str, default="gvmgen_vanilla", help="model name, also the name of the fodler inside save_path")
+    parser.add_argument('--model_name', type=str, default="gvmgen_tuned", help="model name, also the name of the fodler inside save_path")
     parser.add_argument('--split', type=str, default="test", help="split to be accessed in dataset/snes_mvdb/SPLIT")
     parser.add_argument('--dataset_path', type=str, default="/app/dataset/nintendo-snes-spc", help="path to senes_mvdb games folder. snes_mvdb will be added to access the converted dataset")
     parser.add_argument('--converted_dataset', type=str, default="/app/code/dataset", help="path to audiocraft/dataset. snes_mvdb will be added to access the converted dataset")

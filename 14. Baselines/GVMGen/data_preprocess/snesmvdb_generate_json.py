@@ -44,8 +44,8 @@ def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='snesmvdb_to_gvmgen.py')
     parser.add_argument('--snes_mvdb', type=str, default="/app/code/dataset/snes_mvdb", help="path to the equivalent of audiocraft/dataset/snes_mvdb")
-    parser.add_argument('--splits', type=str, default="eval,test", help="splits from snes_mvdb_path split by comma")
-    parser.add_argument('--snes_mvdb_jsonl_folder', type=str, default="/app/code/dataset/snes_mvdb_jsonl", help="path to where the dataset jsonl should go")
+    parser.add_argument('--splits', type=str, default="train,eval,test", help="splits from snes_mvdb_path split by comma")
+    parser.add_argument('--snes_mvdb_jsonl_folder', type=str, default="/app/code/dataset/snes_mvdb_jsonl_new", help="path to where the dataset jsonl should go")
 
     args = parser.parse_args()
     snes_mvdb = args.snes_mvdb

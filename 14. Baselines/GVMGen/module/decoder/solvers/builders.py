@@ -293,6 +293,10 @@ def get_audio_datasets(cfg: omegaconf.DictConfig,
         
         if split in ['valid', 'evaluate'] and num_samples > len(dataset):
             num_samples = len(dataset)
+
+        if split == 'train' and cfg.dataset.train.disable_sampling:
+            num_samples = len(dataset)
+
         print(f"--------------------------> num_samples: {num_samples}; len(dataset): {len(dataset)}")
 
         loader = get_loader(
@@ -302,7 +306,7 @@ def get_audio_datasets(cfg: omegaconf.DictConfig,
             num_workers=num_workers,
             seed=seed,
             collate_fn=dataset.collater if return_info else None,
-            shuffle=shuffle,
+            shuffle=shuffle
         )
         dataloaders[split] = loader
 

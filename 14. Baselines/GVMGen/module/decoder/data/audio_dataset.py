@@ -345,8 +345,9 @@ class AudioDataset:
         assert len(self.meta)  # Fail fast if all data has been filtered.
         self.total_duration = sum(d.duration for d in self.meta)
 
-        if segment_duration is None:
+        if segment_duration is None or disable_sampling:
             num_samples = len(self.meta)
+
         self.num_samples = num_samples
         self.shuffle = shuffle
         self.sample_rate = sample_rate
@@ -368,6 +369,8 @@ class AudioDataset:
             assert not self.sample_on_duration
             assert not self.sample_on_weight
             assert self.shuffle
+
+        print(f"\n $$$$$ AUDIO DATASET self.shuffle: {self.shuffle} | num_samples: {self.num_samples} | len(self.meta):{len(self.meta)} \n")
 
     def start_epoch(self, epoch: int):
         self.current_epoch = epoch
@@ -407,6 +410,7 @@ class AudioDataset:
         You can further make use of the index accessed.
         """
         if self.disable_sampling:
+            print(f"$$$$$ sampling disabled, index:{index}")
             return self.meta[index]
 
         if self.permutation_on_files:
@@ -456,8 +460,15 @@ class AudioDataset:
                 # We only use index
                 rng.manual_seed(index)
 
+            is_retry = False
             for retry in range(self.max_read_retry):
-                file_meta = self.sample_file(index, rng)
+                if not is_retry:
+                    file_meta = self.sample_file(index, rng)
+                else:
+                    # Try other random sample
+                    rand_index = random.randint(0, len(self)-1)
+                    file_meta = self.sample_file(rand_index, rng)
+
                 # We add some variance in the file position even if audio file is smaller than segment
                 # without ending up with empty segments
                 max_seek = max(0, file_meta.duration - self.segment_duration * self.min_segment_ratio)
@@ -472,6 +483,7 @@ class AudioDataset:
                     segment_info = SegmentInfo(file_meta, seek_time, n_frames=n_frames, total_frames=target_frames,
                                                sample_rate=self.sample_rate, channels=out.shape[0])
                 except Exception as exc:
+                    is_retry = True
                     logger.warning("Error opening file %s: %r", file_meta.path, exc)
                     if retry == self.max_read_retry - 1:
                         raise

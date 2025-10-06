@@ -346,6 +346,8 @@ class StandardSolver(ABC, flashy.BaseSolver):
                 raise RuntimeError(f'Could not resolve continue_from checkpoint {self.cfg.continue_from}')
             checkpoint_source = checkpoint.CheckpointSource.OTHER
 
+        print(f"\n -----------------> load_from_path: {load_from_path} <----------------- \n")
+
         if load_from_path is not None:
             state = checkpoint.load_checkpoint(load_from_path, is_sharded)
         elif continue_pretrained:
@@ -424,6 +426,8 @@ class StandardSolver(ABC, flashy.BaseSolver):
                 for name in self.best_state.states.keys():
                     state_source = self._get_state_source(name)
                     self.best_state.update(name, state_source)
+
+        print(f"\n -----------------> checkpoint_source: {checkpoint_source} <----------------- \n")
 
         return state
 

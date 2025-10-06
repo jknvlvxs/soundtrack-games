@@ -164,22 +164,38 @@ def main():
     n_jsons = len(jsons_data)
     print(f"N JSONS: {n_jsons}")
 
+    ############################################################################################################################
+    # After creating the tensors containing the videos, running in parallel will results in concurrence when writing the jsonl #
+    ############################################################################################################################
+
     # Split jsons across processes
-    lin_div = torch.linspace(0, n_jsons, args.n_processes+1, dtype=int).tolist() # type: ignore
+    # lin_div = torch.linspace(0, n_jsons, args.n_processes+1, dtype=int).tolist() # type: ignore
+    # print("lin_div", lin_div)
+    # jsons_process_list = [] # list to wrap a list of videos per process
+    # for idx in range(len(lin_div)-1):
+    #     is_last = idx == len(lin_div)-2
+    #     current_list = []
 
-    jsons_process_list = [] # list to wrap a list of videos per process
-    for idx in range(len(lin_div)-1):
-        jsons_process_list.append(
-            (idx, jsons_data[lin_div[idx]:lin_div[idx+1]])
-        )
+    #     print(f"process {idx} will go from {lin_div[idx]} to {lin_div[idx+1]}")
+    #     if not is_last:
+    #         current_list = jsons_data[lin_div[idx]:lin_div[idx+1]]
+    #     else:
+    #         current_list = jsons_data[lin_div[idx]:]
 
-    # Create processes
+    #     print(f"current list length: {len(current_list)} | is_last {is_last}")
+    #     jsons_process_list.append(
+    #         (idx, current_list)
+    #     )
+
+    # # Create processes
     g_start_time = time.perf_counter()
 
-    with ProcessPoolExecutor(initializer=init_process) as executor:
-        executor.map(covnert_and_generate_json, jsons_process_list)
+    # with ProcessPoolExecutor(initializer=init_process) as executor:
+    #     executor.map(covnert_and_generate_json, jsons_process_list)
 
     g_elapsed_time = time.perf_counter() - g_start_time
+
+    covnert_and_generate_json((0, jsons_data))
 
     print(f"\n\nIt took: {g_elapsed_time}")
 

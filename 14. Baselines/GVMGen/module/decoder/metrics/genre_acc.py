@@ -66,8 +66,8 @@ class GenreClassificationMetrics(torchmetrics.Metric):
         super().__init__()
 
         self.metrics = {
-            'acc': Accuracy(task='multilabel', average='macro', num_labels=len(GENRES)),
-            'f1': F1Score(task='multilabel', average='macro', num_labels=len(GENRES))
+            'acc': Accuracy(task='multilabel', average='none', num_labels=len(GENRES)),
+            'f1': F1Score(task='multilabel', average='none', num_labels=len(GENRES))
         }
 
         # self.precision = Precision(average=False)
@@ -125,7 +125,14 @@ class GenreClassificationMetrics(torchmetrics.Metric):
         metrics_names = self.metrics.keys()
         logger.info(f"Computing {metrics_names} on a total of TODO samples")
 
-        return {metric_name:self.metrics[metric_name].compute() for metric_name in metrics_names}
+        comp_metrics = {metric_name:self.metrics[metric_name].compute() for metric_name in metrics_names}
+        genre_comp_metrics = {}
+
+        for metric in comp_metrics:
+            for metric_value, genre in zip(comp_metrics[metric], GENRES):
+                genre_comp_metrics[f'{metric}_{genre}'] = metric_value
+
+        return genre_comp_metrics
 
 class PaSSTGenreClassificationMetric(GenreClassificationMetrics):
     """Classification metrics based on tuned and modified PASST classifier on the VMDB dataset
