@@ -141,9 +141,12 @@ def generate_cond(
     if input_video is not None:
         video_clip = VideoFileClip(input_video)
         video_duration = video_clip.duration
+
         if video_duration > 23:
             video_clip = video_clip.subclip(0, 23)
+
         video_des = generate_prompt_from_video_description(cfg_path="sonique/Video_LLaMA/eval_configs/video_llama_eval_only_vl.yaml", model_type="llama_v2", gpu_id=0, input_file=input_video, low_resource=low_resource)
+
         # # Low resource code adapt from: https://huggingface.co/blog/4bit-transformers-bitsandbytes
         # # Qwen
         if llms == "qwen-14b":

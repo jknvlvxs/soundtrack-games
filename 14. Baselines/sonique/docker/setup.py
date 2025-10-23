@@ -1,8 +1,8 @@
-from setuptools import setup, find_packages
-import os 
+from setuptools import setup, find_packages 
 
 with open('requirements.txt') as f:
     required_files = f.read().splitlines()
+
 setup(
     name='sonique',
     version='0.0.2',

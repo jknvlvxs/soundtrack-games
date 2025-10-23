@@ -1,3 +1,4 @@
+import typing as tp
 import argparse
 import gc
 import numpy as np
@@ -7,6 +8,7 @@ import torch
 import torchaudio
 import os
 import random
+from dataclasses import dataclass
 
 from aeiou.viz import audio_spectrogram_image
 from einops import rearrange
@@ -41,11 +43,13 @@ def main(args):
         model_config = None
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     model, model_config = load_model(
         model_config=model_config,
         model_ckpt_path=args.ckpt_path,
         device=device
     )
+
     generate_cond(
         instruments=args.instruments,
         genres = args.genres,
@@ -58,10 +62,9 @@ def main(args):
         low_resource=args.low_resource
     )
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Efficient-video-bgm-generation script")
+
     parser.add_argument('--model-config', type=str, help='Path to model config', required=True)
     parser.add_argument('--ckpt-path', type=str, help='Path to model checkpoint', required=True)
     parser.add_argument('--pretrained-name', type=str, help='Optional:Name of pretrained model', required=False)
@@ -75,5 +78,5 @@ if __name__ == "__main__":
     parser.add_argument('--input-video', type=str, help='Optional:Video condition path', required=False, default=None)
     parser.add_argument('--low-resource', type=bool, help='Optional: run on low resource mode', required=False, default=True)
     args = parser.parse_args()
-    
-    main(args)    
+
+    main(args)

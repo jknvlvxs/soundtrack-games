@@ -1,6 +1,6 @@
 export AUDIOCRAFT_TEAM=default
 export USER=gvmgen # Will create an audiocraft_felipe folder inside checkpoints
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=4
 
 # FAD
 export CONDA_ENV_DIR="$CONDA_PREFIX/envs"
@@ -11,7 +11,7 @@ export TF_LIBRARY_PATH="$CONDA_ENV_DIR/fad/lib/python3.10/site-packages/nvidia/c
 dora -P module run \
     solver=gvmgen/gvmgen \
     model/lm/model_scale=large \
-    continue_from=/app/xps/audiocraft_gvmgen/xps/78439aeb_tuned_new_split/state_dict.bin \
+    continue_from=/app/code/checkpoints/original/state_dict.bin \
     dataset.num_workers=4 \
     dataset.batch_size=16 \
     +dataset.evaluate.batch_size=16 \

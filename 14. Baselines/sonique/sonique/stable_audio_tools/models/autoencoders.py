@@ -581,7 +581,7 @@ def create_autoencoder_from_config(config: Dict[str, Any]):
 
     soft_clip = ae_config["decoder"].get("soft_clip", False)
 
-    return AudioAutoencoder(
+    audio_autoencoder = AudioAutoencoder(
         encoder,
         decoder,
         io_channels=io_channels,
@@ -594,6 +594,10 @@ def create_autoencoder_from_config(config: Dict[str, Any]):
         out_channels=out_channels,
         soft_clip=soft_clip
     )
+
+    print(audio_autoencoder)
+
+    return audio_autoencoder
 
 def create_diffAE_from_config(config: Dict[str, Any]):
     

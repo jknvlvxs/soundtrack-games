@@ -24,7 +24,7 @@ from sonique.Video_LLaMA.video_llama.runners import *
 from sonique.Video_LLaMA.video_llama.tasks import *
 
 decord.bridge.set_bridge('torch')
-  
+
 
 def generate_prompt_from_video_description(cfg_path, gpu_id, model_type, input_file, num_beams=1, temperature=1.0, low_resource=False):
     # initialize model
