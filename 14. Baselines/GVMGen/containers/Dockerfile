@@ -19,7 +19,7 @@ RUN conda init --all
 
 WORKDIR /app
 
-RUN conda install "ffmpeg<5" -c conda-forge && \
+RUN conda install av==11.0.0 -c conda-forge && \
 /root/miniconda3/bin/pip install 'torch==2.1.0'
 
 COPY ./requirements.txt ./

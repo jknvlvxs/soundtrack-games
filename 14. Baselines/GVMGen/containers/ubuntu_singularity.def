@@ -1,0 +1,29 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%post
+    #!/bin/bash
+    set -e
+
+    apt-get update
+    apt-get install -y \
+        curl \
+        ca-certificates \
+        squashfs-tools \
+        uidmap
+
+    echo "=== Installing Apptainer ==="
+
+    curl -L \
+      -o /tmp/apptainer.deb \
+      https://github.com/apptainer/apptainer/releases/download/v1.3.3/apptainer_1.3.3_amd64.deb
+
+    apt-get install -y /tmp/apptainer.deb
+
+%test
+    #!/bin/bash
+    apptainer version
+
+%runscript
+    #!/bin/bash
+    exec "$@"

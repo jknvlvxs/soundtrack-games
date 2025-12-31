@@ -146,7 +146,7 @@ def collect_jsons(splits, snes_mvdb_folder, gvmgen_folder, gvmgen_jsonl_folder, 
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='snesmvdb_to_gvmgen.py')
-    parser.add_argument('--snes_mvdb_folder', type=str, default="/app/xps/musicgen_snes_mvdb", help="path to the equivalent of audiocraft/dataset/snes_mvdb")
+    parser.add_argument('--snes_mvdb_folder', type=str, default="/app/xps/dataset_meta_snes_mvdb_container", help="path to audiocraft/dataset/snes_mvdb, that is, the musicgen dataset metadata")
     parser.add_argument('--splits', type=str, default="train,eval,test", help="splits from snes_mvdb_path split by comma")
     parser.add_argument('--gvmgen_folder', type=str, default="/app/code/dataset/snes_mvdb", help="path to where the converted dataset should go")
     parser.add_argument('--gvmgen_jsonl_folder', type=str, default="/app/code/dataset/snes_mvdb_jsonl", help="path to where the dataset jsonl should go")
@@ -165,7 +165,7 @@ def main():
     print(f"N JSONS: {n_jsons}")
 
     ############################################################################################################################
-    # After creating the tensors containing the videos, running in parallel will results in concurrence when writing the jsonl #
+    # After creating the tensors containing the videos, running in parallel will result in concurrence when writing the jsonl #
     ############################################################################################################################
 
     # Split jsons across processes

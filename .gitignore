@@ -5,6 +5,7 @@
 *.html
 
 *.out
+*.err
 *.bkp
 *.log
 
@@ -28,5 +29,6 @@ test_dataset/
 14. Baselines/GVMGen/dataset/snes_mvdb_jsonl
 14. Baselines/GVMGen/dataset/vgmgen
 14. Baselines/GVMGen/checkpoints_tunado
+14. Baselines/GVMGen/containers/gvmgen_singularity
 
 *__pycache__
