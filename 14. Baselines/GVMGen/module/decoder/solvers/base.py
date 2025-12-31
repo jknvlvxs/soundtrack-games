@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from pathlib import Path
 import typing as tp
+import gc
 
 import flashy
 import omegaconf
@@ -441,6 +442,8 @@ class StandardSolver(ABC, flashy.BaseSolver):
             ignore_state_keys (list of str): list of sources to ignore when loading the state, e.g. `optimizer`.
         """
         self.logger.info("Restoring weights and history.")
+        gc.collect()
+        torch.cuda.empty_cache()
         restored_checkpoints = self.load_checkpoints(load_best, ignore_state_keys)
 
         self.logger.info("Model hash: %s", model_hash(self.model))
