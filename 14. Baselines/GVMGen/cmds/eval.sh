@@ -25,7 +25,7 @@ dora -P module run \
     metrics.kld.passt.pretrained_length=30 \
     evaluate.metrics.genre_kld=true \
     metrics.genre_kld.use_gt=false \
-    metrics.genre_kld.checkpoints=//app/xps/genre_classifier_new \
+    metrics.genre_kld.checkpoints=/app/xps/genre_classifier_new \
     evaluate.metrics.genre_class_metrics=true \
     metrics.genre_class_metrics.use_gt=false \
     metrics.genre_class_metrics.checkpoints=/app/xps/genre_classifier_new \

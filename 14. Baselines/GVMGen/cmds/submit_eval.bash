@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=test_suit_gvmgen          # Nome do job
+#SBATCH --job-name=tune_gvmgen          # Nome do job
 #SBATCH --mail-type=ALL                 # Opções: BEGIN, END, FAIL, ALL, etc.
 #SBATCH --mail-user=felipeferreiramarra@gmail.com       # Endereço de e-mail destinatário
 #SBATCH --partition=scientific          # Partição
 #SBATCH --qos=scientific-qos            # QoS 
 #SBATCH --nodes=1                       # Número de nós 1 de 1
 #SBATCH --ntasks=1                      # Número de tarefas
-#SBATCH --cpus-per-task=8               # CPUs por tarefa 8 de 128 (Max)
-#SBATCH --mem=32GB                       # Memória RAM 32GB de 1007GB(Max)
+#SBATCH --cpus-per-task=16               # CPUs por tarefa 8 de 128 (Max)
+#SBATCH --mem=128G                       # Memória RAM 32GB de 1007GB(Max)
 #SBATCH --gres=gpu:1               # Solicitar 1 GPU de 4 (Max)
 #SBATCH --time=2-00:00:00               # Tempo máximo (2 dias)
 #SBATCH --output=job_%j.out        # Arquivo de saída (%j = job ID)
@@ -18,10 +18,6 @@ module --force purge
 module load GCCcore/12.2.0 
 module load CUDA/12.6.0
 module load Apptainer/1.2.2
-
-# Ativar ambiente
-source ~/miniconda3_gvmgen/bin/activate
-echo "$(conda info --envs)"
 
 # Informações do job
 echo "Job ID: $SLURM_JOB_ID"
@@ -36,8 +32,21 @@ echo "Iniciado em: $(date)"
 # The container will be just like an isoladed env to run the code
 export APPTAINER_BIND="/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen:/app/code,/home/es119256/dados/xps:/app/xps,/home/es119256/dados/datasets/vmdb_3:/app/dataset"
 
+# singularity exec --cleanenv --nv "/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen/containers/gvmgen_singularity" \
+#     bash -c """
+# set -x
+# set -e
+
+# python3 -u /app/code/data_preprocess/snesmvdb_to_gvmgen.py
+# """
+
 singularity exec --nv "/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen/containers/gvmgen_singularity" \
     bash -c """
+
+set -x
+
+source /root/miniconda3/bin/activate
+
 export AUDIOCRAFT_TEAM=default
 export USER=gvmgen
 
@@ -49,16 +58,32 @@ export OPENBLAS_NUM_THREADS=1
 
 cd /app/code
 
-export LD_LIBRARY_PATH=/root/miniconda3/lib:\$LD_LIBRARY_PATH
-
-python3 -u test_suite.py --state_dict_bin_folder /app/xps/checkpoints_and_inference/gvmgen_random_01_04_26/checkpoint/ --model_name gvmgen_random
+dora -P module run \
+    solver=gvmgen/gvmgen \
+    model/lm/model_scale=large \
+    continue_from=/app/xps/checkpoints_and_inference/gvmgen_random_01_04_26/checkpoint/state_dict.bin \
+    dataset.num_workers=4 \
+    dataset.batch_size=16 \
+    +dataset.evaluate.batch_size=16 \
+    +metrics.fad.tf.batch_size=1 \
+    execute_only=evaluate \
+    dataset.evaluate.disable_sampling=true \
+    evaluate.metrics.fad=false \
+    metrics.fad.tf.bin=/app/xps/fad/google-research \
+    evaluate.metrics.kld=true \
+    metrics.kld.use_gt=false \
+    metrics.kld.passt.pretrained_length=30 \
+    evaluate.metrics.genre_kld=true \
+    metrics.genre_kld.use_gt=false \
+    metrics.genre_kld.checkpoints=/app/xps/genre_classifier_new \
+    evaluate.metrics.genre_class_metrics=true \
+    metrics.genre_class_metrics.use_gt=false \
+    metrics.genre_class_metrics.checkpoints=/app/xps/genre_classifier_new \
+    evaluate.metrics.text_consistency=true \
+    evaluate.metrics.gt_text_consistency=false \
+    evaluate.metrics.tuned_text_consistency=true \
+    evaluate.metrics.gt_tuned_text_consistency=false
 """
 
 echo "Memória final: $(free -h | grep Mem:)"
 echo "Finalizado em: $(date)"
-
-# echo 'CUDNN_PATH=$(dirname $(python -c "import nvidia.cudnn;print(nvidia.cudnn.__file__)"))' \
-#              >> /root/miniconda3/etc/conda/activate.d/env_vars.sh
-# echo 'export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/root/miniconda3/lib/:\$CUDNN_PATH/lib' \
-#     >> /root/miniconda3/etc/conda/activate.d/env_vars.sh
-# echo \$LD_LIBRARY_PATH
