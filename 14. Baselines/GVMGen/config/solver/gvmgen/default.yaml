@@ -132,6 +132,7 @@ evaluate:
     genre_kld: false
     genre_class_metrics: false
     chroma_cosine: false
+    save_eval_gen: false
 
 checkpoint:
   save_last: true

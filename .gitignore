@@ -23,6 +23,7 @@ test_dataset/
 14. Baselines/GVMGen/dataset/old_split
 
 14. Baselines/GVMGen/checkpoints
+14. Baselines/GVMGen/.checkpoints
 14. Baselines/GVMGen/checkpoints_musicgen
 14. Baselines/GVMGen/dataset
 14. Baselines/GVMGen/dataset/snes_mvdb

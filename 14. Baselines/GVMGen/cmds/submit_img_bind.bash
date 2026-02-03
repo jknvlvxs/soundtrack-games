@@ -6,8 +6,8 @@
 #SBATCH --qos=scientific-qos            # QoS 
 #SBATCH --nodes=1                       # Número de nós 1 de 1
 #SBATCH --ntasks=1                      # Número de tarefas
-#SBATCH --cpus-per-task=8               # CPUs por tarefa 8 de 128 (Max)
-#SBATCH --mem=64G                       # Memória RAM 32GB de 1007GB(Max)
+#SBATCH --cpus-per-task=16               # CPUs por tarefa 8 de 128 (Max)
+#SBATCH --mem=128G                       # Memória RAM 32GB de 1007GB(Max)
 #SBATCH --gres=gpu:1               # Solicitar 1 GPU de 4 (Max)
 #SBATCH --time=2-00:00:00               # Tempo máximo (2 dias)
 #SBATCH --output=job_%j.out        # Arquivo de saída (%j = job ID)
@@ -46,7 +46,9 @@ singularity exec --nv "/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen/cont
 set -x
 
 source /root/miniconda3/bin/activate
+conda activate img_bind
 
+export LD_LIBRARY_PATH="/home/es119256/.conda/envs/img_bind/lib:\$LD_LIBRARY_PATH"
 export AUDIOCRAFT_TEAM=default
 export USER=gvmgen
 
@@ -58,32 +60,9 @@ export OPENBLAS_NUM_THREADS=1
 
 cd /app/code
 
-dora -P module run \
-    solver=gvmgen/gvmgen \
-    model/lm/model_scale=large \
-    continue_from=/app/xps/audiocraft_gvmgen/xps/gvmgen_tuned_0db722fd \
-    dataset.num_workers=4 \
-    dataset.batch_size=16 \
-    +dataset.evaluate.batch_size=16 \
-    +metrics.fad.tf.batch_size=1 \
-    execute_only=evaluate \
-    dataset.evaluate.disable_sampling=true \
-    evaluate.metrics.fad=true \
-    metrics.fad.tf.bin=/app/xps/fad/google-research \
-    evaluate.metrics.kld=false \
-    metrics.kld.use_gt=false \
-    metrics.kld.passt.pretrained_length=30 \
-    evaluate.metrics.genre_kld=false \
-    metrics.genre_kld.use_gt=false \
-    metrics.genre_kld.checkpoints=/app/xps/genre_classifier_new \
-    evaluate.metrics.genre_class_metrics=false \
-    metrics.genre_class_metrics.use_gt=false \
-    metrics.genre_class_metrics.checkpoints=/app/xps/genre_classifier_new \
-    evaluate.metrics.text_consistency=false \
-    evaluate.metrics.gt_text_consistency=false \
-    evaluate.metrics.tuned_text_consistency=false \
-    evaluate.metrics.gt_tuned_text_consistency=false \
-    evaluate.metrics.save_eval_gen=true
+python3 -u module/decoder/metrics/img_bind_consistency.py \
+    --eval_path /app/xps/audiocraft_gvmgen/xps/EVAL_gvmgen_retain_031155fa \
+    --dataset_path /app/dataset/nintendo-snes-spc
 """
 
 echo "Memória final: $(free -h | grep Mem:)"
