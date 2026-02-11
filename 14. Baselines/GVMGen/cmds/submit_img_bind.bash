@@ -61,7 +61,7 @@ export OPENBLAS_NUM_THREADS=1
 cd /app/code
 
 python3 -u module/decoder/metrics/img_bind_consistency.py \
-    --eval_path /app/xps/audiocraft_gvmgen/xps/EVAL_gvmgen_retain_031155fa \
+    --eval_path /app/xps/audiocraft_gvmgen/xps/4f3cf110 \
     --dataset_path /app/dataset/nintendo-snes-spc
 """
 

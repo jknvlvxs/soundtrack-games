@@ -26,7 +26,7 @@ from ..data.audio_utils import normalize_audio
 from ..modules.conditioners import JointEmbedCondition, SegmentWithAttributes, WavCondition
 from ..utils.cache import CachedBatchWriter, CachedBatchLoader
 from ..utils.samples.manager import SampleManager
-from ..utils.utils import get_dataset_from_loader, is_jsonable, warn_once
+from ..utils.utils import get_dataset_from_loader, is_jsonable
 
 from ..data.audio import audio_write
 
@@ -589,9 +589,7 @@ class GVMGenSolver(base.StandardSolver):
         gt_text_consistency: tp.Optional[eval_metrics.TextConsistencyMetric] = None
         tuned_text_consistency: tp.Optional[eval_metrics.TextConsistencyMetric] = None
         gt_tuned_text_consistency: tp.Optional[eval_metrics.TextConsistencyMetric] = None
-        chroma_cosine: tp.Optional[eval_metrics.ChromaCosineSimilarityMetric] = None
         should_run_eval = False
-        eval_chroma_wavs: tp.Optional[torch.Tensor] = None
 
         if self.cfg.evaluate.metrics.fad:
             fad = builders.get_fad(self.cfg.metrics.fad).to(self.device)
@@ -625,18 +623,6 @@ class GVMGenSolver(base.StandardSolver):
             gt_tuned_text_consistency = builders.get_text_consistency(self.cfg.metrics.tuned_text_consistency).to(self.device)
             should_run_eval = True
 
-        if self.cfg.evaluate.metrics.chroma_cosine:
-            chroma_cosine = builders.get_chroma_cosine_similarity(self.cfg.metrics.chroma_cosine).to(self.device)
-            # if we have predefind wavs for chroma we should purge them for computing the cosine metric
-            has_predefined_eval_chromas = 'self_wav' in self.model.condition_provider.conditioners and \
-                                          self.model.condition_provider.conditioners['self_wav'].has_eval_wavs()
-            if has_predefined_eval_chromas:
-                warn_once(self.logger, "Attempting to run cosine eval for config with pre-defined eval chromas! "
-                                       'Resetting eval chromas to None for evaluation.')
-                eval_chroma_wavs = self.model.condition_provider.conditioners.self_wav.eval_wavs  # type: ignore
-                self.model.condition_provider.conditioners.self_wav.reset_eval_wavs(None)  # type: ignore
-            should_run_eval = True
-
         def get_compressed_audio(audio: torch.Tensor) -> torch.Tensor:
             audio_tokens, scale = self.compression_model.encode(audio.to(self.device))
             compressed_audio = self.compression_model.decode(audio_tokens, scale)
@@ -651,6 +637,28 @@ class GVMGenSolver(base.StandardSolver):
             dataset = get_dataset_from_loader(loader)
             assert isinstance(dataset, AudioDataset)
             self.logger.info(f"Computing evaluation metrics on {len(dataset)} samples")
+
+            flashy.distrib.barrier()
+
+            xp_folder = dora.get_xp().folder # type: ignore
+            base_folder = os.path.join(xp_folder, 'eval_gen')
+            pred_folder = os.path.join(base_folder, 'pred')
+            csv_file = os.path.join(base_folder, 'pred_to_orig.csv')
+            self.logger.info(f"Predictions will be saved at {pred_folder}")
+
+            is_rank_zero = flashy.distrib.is_rank_zero()
+
+            if is_rank_zero and not os.path.exists(pred_folder):
+                os.makedirs(pred_folder)
+
+            if is_rank_zero:
+                head=f"y_pred_path,y_path,y_seek,json_path\n"
+                with open(csv_file, 'w') as f:
+                    f.write(head)
+
+            self.logger.info(f"Created new csv at {csv_file}")
+
+            flashy.distrib.barrier()
 
             for idx, batch in enumerate(lp):
                 audio, meta = batch
@@ -723,23 +731,10 @@ class GVMGenSolver(base.StandardSolver):
                     gt_tuned_text_consistency.update(y, texts, sizes, sample_rates)
 
                 if self.cfg.evaluate.metrics.save_eval_gen:
-                    xp_folder = dora.get_xp().folder # type: ignore
-                    base_folder = os.path.join(xp_folder, 'eval_gen')
-                    pred_folder = os.path.join(base_folder, 'pred')
-
-                    if not os.path.exists(pred_folder):
-                        os.makedirs(pred_folder)
-
-                    csv_file = os.path.join(base_folder, 'pred_to_orig.csv')
-
                     rows = ''
-                    if not os.path.exists(csv_file):
-                        head=f"y_pred_path,y_path,y_seek,json_path\n"
-                        rows += head
-
                     for idx, m in enumerate(meta):
-                        audio_stem = Path(m.meta.path).stem + f"_{m.seek_time}"
-                        pred_file = os.path.join(pred_folder, audio_stem)
+                        json_stem = Path(m.meta.json_path).stem
+                        pred_file = os.path.join(pred_folder, json_stem)
 
                         audio_write(pred_file, y_pred[idx], sample_rate=32000)
 
@@ -749,8 +744,6 @@ class GVMGenSolver(base.StandardSolver):
                         f.write(rows)
 
             flashy.distrib.barrier()
-            if fad is not None:
-                metrics['fad'] = fad.compute()
 
             if kldiv is not None:
                 kld_metrics = kldiv.compute()
@@ -776,8 +769,8 @@ class GVMGenSolver(base.StandardSolver):
             if gt_tuned_text_consistency is not None:
                 metrics['gt_tuned_text_consistency'] = gt_tuned_text_consistency.compute()
 
-            if chroma_cosine is not None:
-                metrics['chroma_cosine'] = chroma_cosine.compute()
+            if fad is not None:
+                metrics['fad'] = fad.compute()
 
             metrics = average(metrics)
             metrics = flashy.distrib.average_metrics(metrics, len(loader))
