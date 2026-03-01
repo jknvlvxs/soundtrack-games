@@ -28,50 +28,14 @@ echo "Limites do processo:"
 ulimit -a | egrep 'virtual memory|max resident set|open files'
 echo "Iniciado em: $(date)"
 
-# Bind host folder to the container. In this way I'm only working on the host files
-# The container will be just like an isoladed env to run the code
-export APPTAINER_BIND="/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen:/app/code,/home/es119256/dados/xps:/app/xps,/home/es119256/dados/datasets/vmdb_3:/app/dataset"
-
-# singularity exec --cleanenv --nv "/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen/containers/gvmgen_singularity" \
-#     bash -c """
-# set -x
-# set -e
-
-# python3 -u /app/code/data_preprocess/snesmvdb_to_gvmgen.py
-# """
-
-singularity exec --nv "/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen/containers/gvmgen_singularity" \
-    bash -c """
-export AUDIOCRAFT_TEAM=default
-export USER=gvmgen
-
 export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 
-cd /app/code
+python3 -u /app/code/data_preprocess/snesmvdb_to_gvmgen.py
 
-dora -P module run \
-    solver=gvmgen/gvmgen \
-    model/lm/model_scale=large \
-    continue_from=//pretrained/facebook/musicgen-medium \
-    +ignore_state_conditioner=[description] \
-    dataset.num_workers=3 \
-    dataset.batch_size=6 \
-    dataset.generate.num_samples=10 \
-    dataset.valid.num_samples=500 \
-    schedule.cosine.warmup=8 \
-    optim.optimizer=adamw \
-    optim.lr=1e-5 \
-    optim.epochs=75 \
-    optim.updates_per_epoch=2000 \
-    optim.adam.weight_decay=0.01 \
-    deadlock.timeout=1200 \
-    generate.lm.prompted_samples=False \
-    generate.lm.unprompted_samples=True
-"""
 
 echo "Memória final: $(free -h | grep Mem:)"
 echo "Finalizado em: $(date)"

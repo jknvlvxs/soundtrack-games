@@ -80,6 +80,9 @@ def _av_read(filepath: tp.Union[str, Path], seek_time: float = 0, duration: floa
     Returns:
         tuple of torch.Tensor, int: Tuple containing audio data and sample rate
     """
+    # TODO print where this file is located inside the container to create mete from it
+    # Or just create meta for running outside a container
+
     _init_av()
     with av.open(str(filepath)) as af:
         stream = af.streams.audio[0]

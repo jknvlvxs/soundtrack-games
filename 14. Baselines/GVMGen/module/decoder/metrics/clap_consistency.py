@@ -56,7 +56,7 @@ class CLAPTextConsistencyMetric(TextConsistencyMetric):
         self._initialize_model(model_path, model_arch, enable_fusion)
 
     def _initialize_model(self, model_path: tp.Union[str, Path], model_arch: str, enable_fusion: bool):
-        model_path = "/app/xps/clap/music_audioset_epoch_15_esc_90.14.pt"
+        model_path = "/home/es119256/dados/xps/clap/music_audioset_epoch_15_esc_90.14.pt"
         self.tokenize = RobertaTokenizer.from_pretrained('roberta-base')
         self.model = laion_clap.CLAP_Module(enable_fusion=enable_fusion, amodel=model_arch)
         self.model_sample_rate = 48_000

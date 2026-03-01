@@ -5,11 +5,12 @@ import atexit
 import time
 from concurrent.futures import ProcessPoolExecutor
 import requests
+from pathlib import Path
 
 from tqdm import tqdm
 import torch
 
-from utils.video import capture_video
+#from utils.video import capture_video
 
 FPS = 3
 V_DURATION = 30
@@ -27,9 +28,9 @@ def save_video_tensor(video_file:str, v_tensor_folder:str) -> str:
     name = video_file.split('/')[-1].split('.')[0]
     video_tensor_path = os.path.join(v_tensor_folder, name + ".pt")
     
-    if not os.path.exists(video_tensor_path):
-        video = capture_video(video_file, FPS, 'cuda', V_DURATION)
-        torch.save(video, video_tensor_path)
+    # if not os.path.exists(video_tensor_path):
+    #     video = capture_video(video_file, FPS, 'cuda', V_DURATION)
+    #     torch.save(video, video_tensor_path)
     
     return video_tensor_path
 
@@ -41,6 +42,7 @@ def convert_to_gvmgen(file_path:str, snes_split:str, gvmgen_split:str, v_tensor_
 
     mp3_name = file_dict['name']
     mp3_path = os.path.join(snes_split, mp3_name)
+    mp3_path = str(Path(mp3_path).resolve())
     video_path = file_dict['video']
     video_tensor_path = save_video_tensor(video_path, v_tensor_folder)
 
@@ -146,11 +148,11 @@ def collect_jsons(splits, snes_mvdb_folder, gvmgen_folder, gvmgen_jsonl_folder, 
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='snesmvdb_to_gvmgen.py')
-    parser.add_argument('--snes_mvdb_folder', type=str, default="/app/xps/dataset_meta_snes_mvdb_container", help="path to audiocraft/dataset/snes_mvdb, that is, the musicgen dataset metadata")
+    parser.add_argument('--snes_mvdb_folder', type=str, default="/home/es119256/dados/xps/dataset_meta_snes_mvdb_container", help="path to audiocraft/dataset/snes_mvdb, that is, the musicgen dataset metadata")
     parser.add_argument('--splits', type=str, default="train,eval,test", help="splits from snes_mvdb_path split by comma")
-    parser.add_argument('--gvmgen_folder', type=str, default="/app/code/dataset/snes_mvdb", help="path to where the converted dataset should go")
-    parser.add_argument('--gvmgen_jsonl_folder', type=str, default="/app/code/dataset/snes_mvdb_jsonl", help="path to where the dataset jsonl should go")
-    parser.add_argument('--video_tensors_folder', type=str, default="/app/dataset/videos_tensors", help="path to where the videos tensors will be saved")
+    parser.add_argument('--gvmgen_folder', type=str, default="/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen/dataset/snes_mvdb", help="path to where the converted dataset should go")
+    parser.add_argument('--gvmgen_jsonl_folder', type=str, default="/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen/dataset/snes_mvdb_jsonl", help="path to where the dataset jsonl should go")
+    parser.add_argument('--video_tensors_folder', type=str, default="/home/es119256/dados/datasets/vmdb/videos_tensors", help="path to where the videos tensors will be saved")
     parser.add_argument('--n_processes', type=int, default=5, help="number of processes to run in parallel") 
 
     args = parser.parse_args()

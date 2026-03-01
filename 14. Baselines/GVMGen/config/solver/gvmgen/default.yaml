@@ -32,14 +32,14 @@ dataset:
   min_segment_ratio: 0.8  # lower values such as 0.5 result in generations with a lot of silence.
   return_info: true
   train:
-    num_samples: 1000000000 # need a randomly large number here for AudioDataset
+    num_samples: 1000000 # need a randomly large number here for AudioDataset
     # Setting both shuffle_dataset and disable_sampling to True will result in the traditional 
     # concept of epoch, that is, getting all the samples in the dataset in a random order. 
     disable_sampling: false # follow dataloader sampling order.
   valid:
-    num_samples: 1000000000
+    num_samples: 1000000
   evaluate:
-    num_samples: 1000000000
+    num_samples: 1000000
     disable_sampling: true
     single_audio_instance: false
   generate:
@@ -51,7 +51,7 @@ metrics:
     model: tf
     tf:
       bin: null  # path to local frechet_audio_distance code
-      model_path: /app/xps/fad/vggish_model.ckpt
+      model_path: /home/es119256/dados/xps/fad/vggish_model.ckpt
   kld:
     use_gt: false
     model: passt
@@ -59,33 +59,33 @@ metrics:
       pretrained_length: 20
   genre_kld:
     use_gt: false
-    checkpoints: /app/xps/genre_classifier
+    checkpoints: /home/es119256/dados/xps/genre_classifier
   genre_class_metrics:
     use_gt: false
-    checkpoints: /app/xps/genre_classifier
+    checkpoints: /home/es119256/dados/xps/genre_classifier
   text_consistency:
     use_gt: false
     model: clap
     clap:
-      model_path: /app/xps/clap/music_audioset_epoch_15_esc_90.14.pt
+      model_path: /home/es119256/dados/xps/clap/music_audioset_epoch_15_esc_90.14.pt
       model_arch: 'HTSAT-base'
       enable_fusion: false
   gt_text_consistency:
     model: clap
     clap:
-      model_path: /app/xps/clap/music_audioset_epoch_15_esc_90.14.pt
+      model_path: /home/es119256/dados/xps/clap/music_audioset_epoch_15_esc_90.14.pt
       model_arch: 'HTSAT-base'
       enable_fusion: false
   tuned_text_consistency:
     model: clap
     clap:
-      model_path: /app/xps/clap/tuned_epoch_15.14.pt
+      model_path: /home/es119256/dados/xps/clap/tuned_epoch_15.14.pt
       model_arch: 'HTSAT-base'
       enable_fusion: false
   gt_tuned_text_consistency:
     model: clap
     clap:
-      model_path: /app/xps/clap/tuned_epoch_15.14.pt
+      model_path: /home/es119256/dados/xps/clap/tuned_epoch_15.14.pt
       model_arch: 'HTSAT-base'
       enable_fusion: false
   chroma_cosine:
