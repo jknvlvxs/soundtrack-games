@@ -50,7 +50,7 @@ export OPENBLAS_NUM_THREADS=1
 dora -P module run \
     solver=gvmgen/gvmgen \
     model/lm/model_scale=large \
-    continue_from=/home/es119256/dados/xps/audiocraft_gvmgen/xps/gvmgen_tuned_0db722fd \
+    continue_from=/home/es119256/dados/xps/audiocraft_gvmgen/xps/gvmgen_base/state_dict.bin \
     dataset.num_workers=4 \
     dataset.batch_size=16 \
     +dataset.evaluate.batch_size=16 \
