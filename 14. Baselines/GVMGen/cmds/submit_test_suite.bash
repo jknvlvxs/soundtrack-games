@@ -51,7 +51,7 @@ cd /app/code
 
 export LD_LIBRARY_PATH=/root/miniconda3/lib:\$LD_LIBRARY_PATH
 
-python3 -u test_suite.py --state_dict_bin_folder /app/xps/checkpoints_and_inference/gvmgen_random_01_04_26/checkpoint/ --model_name gvmgen_random
+python3 -u run_test_suite.py
 """
 
 echo "Memória final: $(free -h | grep Mem:)"

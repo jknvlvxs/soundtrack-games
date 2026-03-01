@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=tune_gvmgen          # Nome do job
 #SBATCH --mail-type=ALL                 # Opções: BEGIN, END, FAIL, ALL, etc.
-#SBATCH --mail-user=felipe.marra@ufv.br       # Endereço de e-mail destinatário
+#SBATCH --mail-user=felipeferreiramarra@gmail.com       # Endereço de e-mail destinatário
 #SBATCH --partition=scientific          # Partição
 #SBATCH --qos=scientific-qos            # QoS 
 #SBATCH --nodes=1                       # Número de nós 1 de 1
@@ -42,11 +42,6 @@ export APPTAINER_BIND="/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen:/app
 
 singularity exec --nv "/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen/containers/gvmgen_singularity" \
     bash -c """
-
-set -x
-
-source /root/miniconda3/bin/activate
-
 export AUDIOCRAFT_TEAM=default
 export USER=gvmgen
 
@@ -61,29 +56,21 @@ cd /app/code
 dora -P module run \
     solver=gvmgen/gvmgen \
     model/lm/model_scale=large \
-    continue_from=/app/xps/audiocraft_gvmgen/xps/gvmgen_tuned_0db722fd \
+    continue_from=//pretrained/facebook/musicgen-medium \
+    +ignore_state_conditioner=[description] \
     dataset.num_workers=4 \
     dataset.batch_size=16 \
-    +dataset.evaluate.batch_size=16 \
-    +metrics.fad.tf.batch_size=16 \
-    execute_only=evaluate \
-    dataset.evaluate.disable_sampling=true \
-    evaluate.metrics.fad=true \
-    metrics.fad.tf.bin=/app/xps/fad/google-research \
-    evaluate.metrics.kld=true \
-    metrics.kld.use_gt=false \
-    metrics.kld.passt.pretrained_length=30 \
-    evaluate.metrics.genre_kld=false \
-    metrics.genre_kld.use_gt=false \
-    metrics.genre_kld.checkpoints=/app/xps/genre_classifier_new \
-    evaluate.metrics.genre_class_metrics=false \
-    metrics.genre_class_metrics.use_gt=false \
-    metrics.genre_class_metrics.checkpoints=/app/xps/genre_classifier_new \
-    evaluate.metrics.text_consistency=false \
-    evaluate.metrics.gt_text_consistency=false \
-    evaluate.metrics.tuned_text_consistency=false \
-    evaluate.metrics.gt_tuned_text_consistency=false \
-    evaluate.metrics.save_eval_gen=true
+    dataset.generate.num_samples=10 \
+    dataset.valid.num_samples=500 \
+    schedule.cosine.warmup=8 \
+    optim.optimizer=adamw \
+    optim.lr=1e-5 \
+    optim.epochs=75 \
+    optim.updates_per_epoch=2000 \
+    optim.adam.weight_decay=0.01 \
+    deadlock.timeout=1200 \
+    generate.lm.prompted_samples=False \
+    generate.lm.unprompted_samples=True
 """
 
 echo "Memória final: $(free -h | grep Mem:)"

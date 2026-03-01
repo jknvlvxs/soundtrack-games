@@ -681,7 +681,7 @@ class GVMGenSolver(base.StandardSolver):
                 y = audio.cpu()  # should already be on CPU but just in case
                 sizes = torch.tensor([m.n_frames for m in meta])  # actual sizes without padding
                 sample_rates = torch.tensor([m.sample_rate for m in meta])  # sample rates for audio samples
-                audio_stems = [Path(m.meta.path).stem + f"_{m.seek_time}" for m in meta]
+                audio_stems = [Path(m.meta.json_path).stem + f"_{m.seek_time}" for m in meta]
 
                 if fad is not None:
                     fad_y_pred = y_pred # another variable so that y_pred wont get altered for the next metrics
