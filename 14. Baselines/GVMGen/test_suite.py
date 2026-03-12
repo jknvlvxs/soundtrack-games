@@ -148,7 +148,7 @@ def run_inference_gvmgen(state_dict_folder:str, vid_tensor_path, save_path):
 
     audio_write(save_path, wave.cpu(), model.sample_rate, strategy="loudness", loudness_compressor=True)
 
-def get_samples_from_df(df_path:str) -> list[dict[str, str]]:
+def get_samples_from_df(df_path:str, videos_tensor:str) -> list[dict[str, str]]:
     choosen_samples:list[dict[str, str]] = []
 
     test_suite_vids = pd.read_csv(df_path)
@@ -156,7 +156,7 @@ def get_samples_from_df(df_path:str) -> list[dict[str, str]]:
         idx, game, genre, video, audio, description = row
 
         vid_name = video.split('/')[-1][:-4]
-        visual_content = os.path.join("/app/dataset/videos_tensors/", vid_name+'.pt')
+        visual_content = os.path.join(videos_tensor, vid_name+'.pt')
 
         choosen_sample = {
             'game': game,
@@ -171,21 +171,22 @@ def get_samples_from_df(df_path:str) -> list[dict[str, str]]:
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='test_suite.py')
-    parser.add_argument('--save_path', type=str, default="/app/xps/checkpoints_and_inference", help="path to folder where results will be stored")
-    parser.add_argument('--genres_path', type=str, default="/app/dataset/deepseek_genres.csv", help="path to games genres csv")
-    parser.add_argument('--df_path', type=str, default="/app/xps/checkpoints_and_inference_final/test_suite_videos.csv_02_21_26", help="path to games genres csv")
+    parser.add_argument('--save_path', type=str, default="/home/es119256/dados/xps/checkpoints_and_inference_final", help="path to folder where results will be stored")
+    #parser.add_argument('--genres_path', type=str, default="/app/dataset/deepseek_genres.csv", help="path to games genres csv")
+    parser.add_argument('--df_path', type=str, default="/home/es119256/dados/xps/checkpoints_and_inference_final/test_suite_videos.csv_02_21_26", help="path to games genres csv")
     parser.add_argument('--split', type=str, default="test", help="split to be accessed in dataset/snes_mvdb/SPLIT")
-    parser.add_argument('--converted_dataset', type=str, default="/app/code/dataset", help="path to audiocraft/dataset. snes_mvdb will be added to access the converted dataset")
+    parser.add_argument('--converted_dataset', type=str, default="/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen/dataset", help="path to audiocraft/dataset. snes_mvdb will be added to access the converted dataset")
+    parser.add_argument('--videos_tensor', type=str, default="/home/es119256/dados/datasets/vmdb_3/videos_tensors", help="path to audiocraft/dataset. snes_mvdb will be added to access the converted dataset")
     parser.add_argument('--state_dict_bin_folder', type=str, help="path to folder containing state_dict.bin")
-    parser.add_argument('--model_name', type=str, default="gvmgen_tuned", help="model name, also the name of the fodler inside save_path")
+    parser.add_argument('--model_name', type=str, default="GVMGen_Tuned", help="model name, also the name of the fodler inside save_path")
 
     args = parser.parse_args()
 
     state_dict_bin_folder = args.state_dict_bin_folder
     save_path = args.save_path
-    gt_base_path = os.path.join(save_path+'_final', 'Ground_Truth')
+    gt_base_path = os.path.join(save_path, 'Ground_Truth')
     model_name = args.model_name
-    genres_path = args.genres_path
+    # genres_path = args.genres_path
     dataset_split_path = os.path.join(args.converted_dataset, 'snes_mvdb', args.split)
 
     date = datetime.now()
@@ -201,7 +202,7 @@ def main():
     # Read dataset split, select samples and run inference
     # samples_dicts = read_dataset_split(dataset_split_path, genres_path)
     # samples_dicts = get_n_samples_per_game(samples_dicts, 3)
-    samples_dicts = get_samples_from_df(args.df_path)
+    samples_dicts = get_samples_from_df(args.df_path, args.videos_tensor)
 
     # Debug
     # game = ''

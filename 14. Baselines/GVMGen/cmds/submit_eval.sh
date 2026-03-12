@@ -50,7 +50,7 @@ export OPENBLAS_NUM_THREADS=1
 dora -P module run \
     solver=gvmgen/gvmgen \
     model/lm/model_scale=large \
-    continue_from=/home/es119256/dados/xps/audiocraft_gvmgen/xps/gvmgen_base/state_dict.bin \
+    continue_from=/home/es119256/dados/xps/audiocraft_gvmgen/xps/371938d6/checkpoint.th \
     dataset.num_workers=4 \
     dataset.batch_size=16 \
     +dataset.evaluate.batch_size=16 \
@@ -65,7 +65,7 @@ dora -P module run \
     evaluate.metrics.genre_kld=false \
     metrics.genre_kld.use_gt=false \
     metrics.genre_kld.checkpoints=/home/es119256/dados/xps/genre_classifier_new \
-    evaluate.metrics.genre_class_metrics=false \
+    evaluate.metrics.genre_class_metrics=true \
     metrics.genre_class_metrics.use_gt=false \
     metrics.genre_class_metrics.checkpoints=/home/es119256/dados/xps/genre_classifier_new \
     evaluate.metrics.text_consistency=false \

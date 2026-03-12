@@ -1,10 +1,9 @@
-export LOCAL_MACHINE="felipe@10.255.0.107:/home/felipe/Desktop/state_dict/"
-export XPS_FOLDER="/app/xps/audiocraft_gvmgen/xps/78439aeb_tuned_new_split"
-export CHECKPOINTS_AND_INFERENCE_FODLER="../checkpoints"
+export LOCAL_MACHINE="felipe@10.255.0.107:/media/felipe/32740855-6a5b-4166-b047-c8177bb37be1/state_dict_bin_and_demo_inference/"
+export XPS_FOLDER="/home/es119256/dados/xps/checkpoints_and_inference_final/"
 
 #rsync -avzhP --exclude='*.th' $XPS_FOLDER $LOCAL_MACHINE
 #rsync -avzhP $XPS_FOLDER $LOCAL_MACHINE
 
-echo $CHECKPOINTS_AND_INFERENCE_FODLER
+echo $XPS_FOLDER
 echo $LOCAL_MACHINE
-rsync -avzhP $LOCAL_MACHINE $CHECKPOINTS_AND_INFERENCE_FODLER
+rsync -avzhP $XPS_FOLDER $LOCAL_MACHINE

@@ -95,7 +95,7 @@ def run_img_bind_standalone():
 
             mp3_path = json_file["path"]
             mp3_stem = mp3_path.split('/')[-1].split('.')[0]
-            game = mp3_stem.split('_soundtrack')[0]
+            game = mp3_path.split('nintendo-snes-spc/')[-1].split('/')[0]
             soundtrack = mp3_stem.split(f'{game}_')[-1]
 
             pt_path = json_file["visual_content"]
