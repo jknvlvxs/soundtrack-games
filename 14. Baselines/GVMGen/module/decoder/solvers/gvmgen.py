@@ -28,7 +28,7 @@ from ..utils.cache import CachedBatchWriter, CachedBatchLoader
 from ..utils.samples.manager import SampleManager
 from ..utils.utils import get_dataset_from_loader, is_jsonable
 
-from ..data.audio import audio_write
+from ..data.audio import audio_write, audio_read
 
 class GVMGenSolver(base.StandardSolver):
     """Solver for GVMGen training task.
@@ -631,10 +631,13 @@ class GVMGenSolver(base.StandardSolver):
         metrics: dict = {}
         if should_run_eval:
             loader = self.dataloaders['evaluate']
+
             updates = len(loader)
-            lp = self.log_progress(f'{evaluate_stage_name} inference', loader, total=updates, updates=self.log_updates)
             average = flashy.averager()
+    
+            lp = self.log_progress(f'{evaluate_stage_name} inference', loader, total=updates, updates=self.log_updates)
             dataset = get_dataset_from_loader(loader)
+
             assert isinstance(dataset, AudioDataset)
             self.logger.info(f"Computing evaluation metrics on {len(dataset)} samples")
 
@@ -777,12 +780,180 @@ class GVMGenSolver(base.StandardSolver):
 
         return metrics
 
+    def evaluate_audio_generation_w_continuation(self) -> dict:
+        """Evaluation metrics that save audio on the disk before being computed and therefore can be continued if interrupted."""
+        evaluate_stage_name = f'{self.current_stage}_generation'
+
+        # instantiate evaluation metrics, if at least one metric is defined, run audio generation evaluation
+        kldiv: tp.Optional[eval_metrics.KLDivergenceMetric] = None
+        fad: tp.Optional[eval_metrics.FrechetAudioDistanceMetric] = None
+        should_run_eval = False
+
+        if self.cfg.evaluate.metrics.kld:
+            kldiv = builders.get_kldiv(self.cfg.metrics.kld).to(self.device)
+            should_run_eval = True
+
+        if self.cfg.evaluate.metrics.fad:
+            fad = builders.get_fad(self.cfg.metrics.fad).to(self.device)
+            should_run_eval = True
+
+        if self.cfg.evaluate.metrics.save_eval_gen:
+            should_run_eval = True
+
+        def get_compressed_audio(audio: torch.Tensor) -> torch.Tensor:
+            audio_tokens, scale = self.compression_model.encode(audio.to(self.device))
+            compressed_audio = self.compression_model.decode(audio_tokens, scale)
+            return compressed_audio[..., :audio.shape[-1]] # type: ignore
+
+        metrics: dict = {}
+        if should_run_eval:
+            loader = self.dataloaders['evaluate']
+
+            updates = len(loader)
+            average = flashy.averager() # type: ignore
+
+            lp = self.log_progress(f'{evaluate_stage_name} inference', loader, total=updates, updates=self.log_updates)
+            dataset = get_dataset_from_loader(loader)
+
+            assert isinstance(dataset, AudioDataset)
+            self.logger.info(f"Computing evaluation metrics on {len(dataset)} samples")
+
+            flashy.distrib.barrier()
+
+            xp_folder = dora.get_xp().folder # type: ignore
+            base_folder = os.path.join(xp_folder, 'eval_gen')
+            pred_folder = os.path.join(base_folder, 'pred')
+            csv_file = os.path.join(base_folder, 'pred_to_orig.csv')
+            self.logger.info(f"Predictions will be saved at {pred_folder}")
+
+            is_rank_zero = flashy.distrib.is_rank_zero()
+
+            if is_rank_zero and not os.path.exists(pred_folder):
+                os.makedirs(pred_folder)
+
+            if is_rank_zero:
+                head=f"y_pred_path,y_path,y_seek,json_path\n"
+                with open(csv_file, 'w') as f:
+                    f.write(head)
+
+            self.logger.info(f"Created new csv {csv_file}")
+
+            flashy.distrib.barrier()
+
+            for idx, batch in enumerate(lp):
+                audio, meta = batch
+                #print(f"\n-------------------> meta {idx}:\n{meta}\n")
+                assert all([self.cfg.sample_rate == m.sample_rate for m in meta])
+
+                existent_meta = []
+                for idx, m in enumerate(meta):
+                    json_stem = Path(m.meta.json_path).stem
+                    pred_file = os.path.join(pred_folder, json_stem+'.wav')
+
+                    if os.path.exists(pred_file):
+                        existent_meta.append(pred_file)
+
+                if len(meta) > len(existent_meta):
+                    assert kldiv == None, """To assure consistency KLD Must run with all audios pre-computed or only in eval_audio_generation w/o continuation"""
+
+                    target_duration = audio.shape[-1] / self.cfg.sample_rate
+                    if self.cfg.evaluate.fixed_generation_duration:
+                        target_duration = self.cfg.evaluate.fixed_generation_duration
+
+                    gen_outputs = self.run_generate_step(
+                        batch, gen_duration=target_duration,
+                        remove_text_conditioning=self.cfg.evaluate.get('remove_text_conditioning', False)
+                    )
+                    y_pred = gen_outputs['gen_audio'].detach()
+                    y_pred = y_pred[..., :audio.shape[-1]]
+
+                    normalize_kwargs = dict(self.cfg.generate.audio)
+                    normalize_kwargs.pop('format', None)
+                    y_pred = torch.stack([normalize_audio(w, **normalize_kwargs) for w in y_pred], dim=0).cpu()
+                else:
+                    if self.cfg.evaluate.metrics.save_eval_gen:
+                        rows = ''
+                        for idx, m in enumerate(meta):
+                            json_stem = Path(m.meta.json_path).stem
+                            pred_file = os.path.join(pred_folder, json_stem)
+
+                            rows += f"{pred_file},{m.meta.path},{m.seek_time},{m.meta.json_path}\n"
+
+                        with open(csv_file, 'a') as f:
+                            f.write(rows)                 
+
+                    if kldiv is not None:
+                        sizes = torch.tensor([m.n_frames for m in meta])  # actual sizes without padding
+                        sample_rates = torch.tensor([m.sample_rate for m in meta])  # sample rates for audio samples
+
+                        y = audio.cpu()
+                        kldiv_y_pred = torch.stack([audio_read(y_pred_path)[0] for y_pred_path in existent_meta], dim=0).cpu()
+
+                        if self.cfg.metrics.kld.use_gt:
+                            kldiv_y_pred = get_compressed_audio(y).cpu()
+                        kldiv.update(kldiv_y_pred, y, sizes, sample_rates)
+
+                    continue
+
+                y = audio.cpu()  # should already be on CPU but just in case
+                # print(f"\nevaluate_audio W continuation: y_pred: {y_pred.shape} | y {y.shape}\n")
+
+                sizes = torch.tensor([m.n_frames for m in meta])  # actual sizes without padding
+                sample_rates = torch.tensor([m.sample_rate for m in meta])  # sample rates for audio samples
+                audio_stems = [Path(m.meta.json_path).stem + f"_{m.seek_time}" for m in meta]
+
+                if fad is not None:
+                    fad_y_pred = y_pred # another variable so that y_pred wont get altered for the next metrics
+                    if self.cfg.metrics.fad.use_gt:
+                        fad_y_pred = get_compressed_audio(y).cpu()
+                    jsons_paths = [m.meta.json_path for m in meta]
+                    fad.update(fad_y_pred, y, sizes, sample_rates, audio_stems, jsons_paths)
+
+                if self.cfg.evaluate.metrics.save_eval_gen:
+                    rows = ''
+                    for idx, m in enumerate(meta):
+                        json_stem = Path(m.meta.json_path).stem
+                        pred_file = os.path.join(pred_folder, json_stem)
+
+                        audio_write(pred_file, y_pred[idx], sample_rate=32000)
+
+                        rows += f"{pred_file},{m.meta.path},{m.seek_time},{m.meta.json_path}\n"
+
+                    with open(csv_file, 'a') as f:
+                        f.write(rows)
+
+                    flashy.distrib.barrier()
+
+            flashy.distrib.barrier()
+
+            if kldiv is not None:
+                kld_metrics = kldiv.compute()
+                metrics.update(kld_metrics)
+
+            if fad is not None:
+                metrics['fad'] = fad.compute()
+
+            metrics = average(metrics)
+            metrics = flashy.distrib.average_metrics(metrics, len(loader))
+
+        return metrics
+
     def evaluate(self) -> dict:
         """Evaluate stage."""
         self.model.eval()
         with torch.no_grad():
             metrics: dict = {}
+
             if self.cfg.evaluate.metrics.base:
+                #print("self.cfg.evaluate.metrics.base") -> Won't get executed
                 metrics.update(self.common_train_valid('evaluate'))
-            gen_metrics = self.evaluate_audio_generation()
+
+            # self.logger.info(f"Evaluate will be run with continuation")
+            # gen_metrics = self.evaluate_audio_generation_w_continuation()
+            if self.cfg.evaluate.with_continaution:
+                self.logger.info(f"Evaluate will be run with continuation")
+                gen_metrics = self.evaluate_audio_generation_w_continuation()
+            else:
+                gen_metrics = self.evaluate_audio_generation()
+
             return {**metrics, **gen_metrics}

@@ -16,7 +16,7 @@ autocast_dtype: float16
 # with a total stride of 640 leading to 50 frames/s.
 # rvq.n_q=4, rvq.bins=2048, no quantization dropout
 # (transformer_lm card and n_q must be compatible)
-compression_model_checkpoint: "/home/es119256/dados/xps/audiocraft_gvmgen/xps/gvmgen_base/compression_state_dict.bin"
+compression_model_checkpoint: "/home/es119256/dados/repos/vmdb/14. Baselines/GVMGen/checkpoints/compression_state_dict.bin"
 
 channels: 1
 sample_rate: 32000
