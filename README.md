@@ -1,94 +1,108 @@
 # VMDB - Video-Music Database
-VMDB (Video-Music Database) is a repository aimed at demonstrating the steps to create a dataset containing a list of n pairs (a, v) for a specific game. In this dataset, a represents an audio track from the game’s soundtrack, and v is a gameplay video of the game where the specific audio track plays. 
+**VMDB** (Video-Music Database) is a repository aimed at demonstrating the steps to create a dataset containing pairs (audio, video) for a specific game. In this dataset, audio is a soundtrack track from the game's original score, and video is a gameplay video where that specific track plays.
 
-## Getting Extensions to Download Using ffmpeg
+## Scraping data
 
-In the `1. Scraping VGM Data/extensions/` directory, you will find `extensions.json`, which is collected from `extensions.html`. This file contains all extensions gathered from the VGM website.
+This step collects HTML pages from [Zophar.net](https://www.zophar.net/music), a website that archives video game music downloads organized by console system.
 
-To extract data from the `.html` file and create `extensions.json`, run:
+### Collecting system listing pages
+
+`systems.py` iterate over a list of 21 game systems (e.g., SNES, NES, GBA, PS1, Sega Genesis). For each system, it navigates through all paginated listing pages on Zophar.net and saves the resulting HTML to `systems/{system}/{page}.html`.
+
 ```
-python extensions.py
-```
-
-Next, you need to check which of these extensions can be converted to `.mp3` using **ffmpeg**. In the `/ffmpeg` directory, there are 3 `.txt` files with the output of **ffmpeg** commands that list supported extensions.
-
-To verify if each format in `extensions.json` is supported by **ffmpeg**, run:
-```
-python convert.py
+python systems.py
 ```
 
-This will generate the `convert.json` file, which will be used later in the data scraping process.
+### Collecting individual game pages
 
-## Running the Scraping Script on the VGM Site
+`scrapping.py` reads the saved system listing HTML files, extracts individual game links, then request and save each game's detail page to `data/{system}/{game}.html`. These pages contain the game metadata and soundtrack download links used in the next step.
 
-To collect data, you need to search for game consoles/systems on the VGM website. We have collected this data manually, and you can find it in `1. Scraping VGM Data/systems/`.
-
-Now, run the script to collect all data. This process will take some time, so please be patient:
 ```
-python scraping.py
+python scrapping.py
 ```
 
-This script will search every page for all systems listed in `systems.json` and all extensions in `convert.json`, then download the `.html` files. The data will be saved in `1. Scraping VGM Data/data/`.
+## Generating data
 
-## Cleaning Up HTML Files Without Soundtrack Links
+`generate.py` reads all the game HTML files collected in first step and parses them to extract game metadata: name, console, developer, cover image URL, emulator, release date, soundtrack archive size, and download URL. It deduplicates entries, sorts them alphabetically by name, and saves the result to `data.json`.
 
-Now, we need to clean up `.html` files that do not contain soundtrack links by running:
-```
-python cleaning.py
-```
-
-## Generating `data.json`
-
-In the `2. Generating data/` directory, we will run script that organizes the collected data into a file.
-
-To organize the data, there's a script to create a `.json` file that merges all collected links and games. Run:
 ```
 python generate.py
 ```
 
-This will generate the `data.json` file, which includes information such as:
-- Name
-- Date
-- System
-- Size
-- URL
-- YouTube  
-  - URL
-  - Title
-  - Channel
-  - Duration
+The resulting `data.json` contains objects with the following fields:
+- `slug`, `name`, `console`, `system`, `developer`, `cover`, `emulator`, `release_date`, `size`, `url`
 
-## Viewing Collected Data Metrics
+## Collecting YouTube links
 
-To view the amount of raw data collected, run:
+This step searches YouTube for a gameplay longplay video for each game in `data.json` and augments it with that information. Start by copying the file generated in the second step:
+
 ```
-python metrics.py
+cp "2. Generating data/data.json" "3. Collecting youtube links/metadata.json"
 ```
 
-## Collecting Youtube Videos
-Copy the data file to the step 3, to collect youtube links
+### collect_youtube.py
+
+Reads `metadata.json` and searches YouTube for each game using the `youtubesearchpython` library, using the game name, console, and the query term "Longplay". Among the top 5 results, it prefers videos from the "World of Longplays" channel; otherwise it selects the first result. The `youtube.url`, `youtube.channel`, `youtube.title`, and `youtube.duration` fields are added to each entry. Progress is saved after every 100 entries. Games for which no video is found are logged in `not_found.log`.
+
 ```
-cp 2.\ Generating\ data/data.json 3.\ Collecting\ Youtube\ Links/
+python collect_youtube.py
 ```
 
-Now, the code is ready to collect youtube links
+### Metrics
+
+- `metrics/metrics.py`: Prints the total count of entries with YouTube links, total soundtrack archive size in MB, and a breakdown of entries per console.
+- `metrics/duration.py`: Finds and displays the entry whose YouTube video has the longest duration.
+- `metrics/plots.py`: Generates bar charts showing the number of games per console and per release year.
+
+## Downloading content
+
+This step downloads the actual data and organizes them into the database directory structure under `5. Database/`.
+
+`download_content.py` accepts a console slug as a command-line argument and processes all entries in `metadata.json` that match that system and already have a YouTube link. For each game it:
+1. Downloads the soundtrack archive (`.zip` or `.7z`) from Zophar.net and extracts it, renaming each track to `soundtrack_XXXX.mp3`.
+2. Downloads the YouTube gameplay video.
+3. Slices the video into 10-second segments using `ffmpeg`.****
+
+All files are stored under `5. Database/{console}/{game}/soundtracks/` and `5. Database/{console}/{game}/videos/`. Soundtrack and video downloads run concurrently within each game, and up to two games are processed in parallel.
+
 ```
-python collect_youtube.py | tee -a youtube.txt
+python download_content.py <console_slug>
 ```
 
-## Downloading Content
+Available console slugs include `nintendo-snes-spc` and others found in `metadata.json`.
+
+### Utility scripts
+
+- `eliminate_half.py`: Removes even-numbered video segments from the SNES dataset, halving the number of video clips per game.
+- `remove_short_mp3.py`: Scans the soundtracks folder and removes any `.mp3` file shorter than 8 seconds.
+- `metrics/video_metrics.py`: Counts and prints the number of video files in each game's `videos/` subdirectory.
+
+## Database
+
+The `5. Database/` directory is the storage location for all content downloaded in fourth step. Its structure is:
+
 ```
-python download_content.py console_slug
+1. Database/
+└── {console}/
+    └── {game}/
+        ├── soundtracks/
+        │   └── soundtrack_XXXX.mp3
+        └── videos/
+            └── {game}_XXXXX.mp4
 ```
 
-The list of consoles slugs are:
-- `nintendo-snes-spc`
+## Audio fingerprinting
 
-## Audio Fingerprinting
+Audio fingerprinting is used to automatically map each 10-second video clip to the soundtrack track playing in it. This is done with the [Dejavu](https://github.com/worldveil/dejavu) library, which fingerprints audio using spectrogram peak pairs and matches query audio against a database of known fingerprints.
 
-### Create mysql database for dejavu using docker
-6. Audio fingerprinting
-  
+For each game, `mapping.py` creates a dedicated MySQL database, fingerprints all of the game's tracks, then extracts audio from each video clip and runs it through Dejavu's recognizer. The recognized soundtrack name and confidence scores (`input_confidence` and `fingerprinted_confidence`) are written to `mapping_log.csv` in the game folder. 
+
+If a match is found, the video is moved into a subfolder named after the matched soundtrack (e.g., `videos/soundtrack_0001/`).
+
+### Running the mapping
+
+#### With docker-compose
+
 ```
 docker-compose up
 ```
@@ -97,11 +111,11 @@ docker-compose up
 python3.7 -m venv env
 source env/bin/activate
 pip install -r requirements.txt
-<!-- python3.7 dejavu_mapping.py -->
 python3.7 mapping.py --console console_slug
 ```
 
-### Running in container
+#### Building containers
+
 ```
 docker network create vmdb_network
 
@@ -112,14 +126,30 @@ cd docker/python
 docker build -t dejavu .
 ```
 
-The running command is on each Dockerfile
+The run command for each container is specified inside its respective Dockerfile.
 
 ### Tuning Dejavu
+
+The following Dejavu parameters were adjusted from their defaults to improve matching accuracy on game soundtracks:
+
 ```
 DEFAULT_FAN_VALUE = 10  # 15 was the original value.
 DEFAULT_AMP_MIN = 7
 PEAK_NEIGHBORHOOD_SIZE = 7  # 20 was the original value.
 ```
+
+### Audio duration analysis
+
+The `audio_duration/` folder contains scripts to inspect the duration distribution of the collected soundtracks before fingerprinting:
+
+- `audio_duration.py`: Iterates over all soundtrack MP3s in the dataset and saves their durations (in seconds) to `durations.json`.
+- `metrics.py`: Reads `durations.json` and prints summary statistics: total count, mean duration, the 5 shortest and 5 longest files, and the count of files longer than 350 seconds.
+- `plot.py`: Plots a histogram of soundtrack durations, capping values at 360 seconds, and saves it as `grafico.png`.
+
+### Utility scripts
+
+- `restore_dataset.py`: Reverts the mapping performed by `mapping.py`. Moves all video files from their `videos/soundtrack_XXXX/` subfolders back to the flat `videos/` directory, removes temporary MP3 extracts, and deletes `mapping_log.csv`. Useful for re-running the fingerprinting step from scratch.
+- `drop_database.py`: Drops all MySQL databases created during the mapping step and then calls the same restore logic as `restore_dataset.py`.
 
 ## Videos Descriptions
 [Task 7](./07.%20Video%20descriptions/) leverages [VideoLLaMA 3](https://arxiv.org/abs/2501.13106) to generate descriptions for the videos. As usual, we ran the code inside a [container](07.%20Video%20descriptions/docker/). There is also the [cmd.bahs](./07.%20Video%20descriptions/cmd.bash) that sets the GPUs to use and tells HuggingFace to run the models in total offline mode. This last part is quite important to avoid a "too many requests" error.
@@ -183,32 +213,45 @@ to a separated folder, a "parallel" dataset with data that is not useful for our
 
 ## Split dataset
 
-### get_videos_info
+This step organizes the mapped dataset into a tabular index, optionally downsamples it for genre balance, and produces train/eval/test splits.
+
+### 1. Get videos info
+
+`get_videos_info.py` traverses the dataset directory and collects every mapped video segment (i.e., files inside `videos/soundtrack_XXXX/` subfolders). It cross-references each game against `deepseek_genres.csv` to attach a genre label, and writes the result to `videos_info.csv` with columns: `index`, `game_id`, `soundtrack`, `segment`, and `genre`.
+
 ```
-python get_videos_info.py
-
-will generate file videos_info.csv with all dataset
-```
-
-### load_downsample
-```
-get selected_videos.jsonl from step 07 to assert that every soundtrack will have at least one video selected
-
-filter videos_info.csv with the selected_videos.jsonl will generate a new videos_info.csv
-```
-> cd load_downsample
-
-> python downsample.py && cd ../plots && python plot_videos_info.py --downsampled && cd ../load_downsample
-
-> rm -rf videos_info.csv && rm -rf ../plots/downsample
-
-
-### plots
-```
-run plots to get dataset info
+python get_videos_info.py --dataset_root <path> --console <console_slug>
 ```
 
-### split
+### 2. Downsample
+
+`downsample.py` reads the `videos_info.csv` produced in the previous step and performs genre-balanced downsampling. It:
+1. Computes a target segment count for each genre based on `smallest_genre_count × 1.5`, to approximate a uniform distribution without discarding too much data.
+2. For each game, derives a per-soundtrack target segment count proportional to the genre weight.
+3. Selects segments at linearly spaced indices within each soundtrack, skipping the first and last to avoid opening and ending screens.
+
+The result is saved as `videos_info.csv` inside the `2. downsample/` folder.
+
 ```
-run split with selected_videos_info.csv
+python downsample.py
+```
+
+### Plots
+
+`plots/plot_videos_info.py` generates distribution statistics and bar charts for both the full and downsampled datasets. It reports soundtracks per game and genre, videos per game, genre, and soundtrack, and per-split breakdowns once splits are available. Output files (`.txt` tables and `.png` charts) are written to `plots/full/` or `plots/downsample/` depending on the `--downsampled` flag.
+
+```
+# On the full dataset
+python plot_videos_info.py
+
+# On the downsampled dataset
+python plot_videos_info.py --downsampled
+```
+
+### Split
+
+`split.py` splits the dataset at the game level using `priority_group_stratified_split`, which assigns games to partitions while preserving the genre distribution across splits. The default ratio is 50% train / 40% eval / 10% test. The resulting lists of game IDs are saved as `splits/train.txt`, `splits/eval.txt`, and `splits/test.txt`.
+
+```
+python split.py
 ```
